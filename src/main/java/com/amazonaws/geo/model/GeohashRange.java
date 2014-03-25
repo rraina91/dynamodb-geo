@@ -18,13 +18,13 @@ package com.amazonaws.geo.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.amazonaws.geo.GeoDataManagerConfiguration;
 import com.amazonaws.geo.s2.internal.S2Manager;
 
 public class GeohashRange {
 
 	private long rangeMin;
 	private long rangeMax;
+    public static final long MERGE_THRESHOLD = 2;
 
 	public GeohashRange(long range1, long range2) {
 		this.rangeMin = Math.min(range1, range2);
@@ -32,13 +32,13 @@ public class GeohashRange {
 	}
 
 	public boolean tryMerge(GeohashRange range) {
-		if (range.getRangeMin() - this.rangeMax <= GeoDataManagerConfiguration.MERGE_THRESHOLD
+		if (range.getRangeMin() - this.rangeMax <= MERGE_THRESHOLD
 				&& range.getRangeMin() - this.rangeMax > 0) {
 			this.rangeMax = range.getRangeMax();
 			return true;
 		}
 
-		if (this.rangeMin - range.getRangeMax() <= GeoDataManagerConfiguration.MERGE_THRESHOLD
+		if (this.rangeMin - range.getRangeMax() <= MERGE_THRESHOLD
 				&& this.rangeMin - range.getRangeMax() > 0) {
 			this.rangeMin = range.getRangeMin();
 			return true;
@@ -88,11 +88,11 @@ public class GeohashRange {
 	 * min: -123999999
 	 * max: -123456789
 	 */
-	public List<GeohashRange> trySplit(int hashKeyLength) {
+	public List<GeohashRange> trySplit(int hashKeyLength, S2Manager s2Manager) {
 		List<GeohashRange> result = new ArrayList<GeohashRange>();
 
-		long minHashKey = S2Manager.generateHashKey(rangeMin, hashKeyLength);
-		long maxHashKey = S2Manager.generateHashKey(rangeMax, hashKeyLength);
+		long minHashKey = s2Manager.generateHashKey(rangeMin, hashKeyLength);
+		long maxHashKey = s2Manager.generateHashKey(rangeMax, hashKeyLength);
 
 		long denominator = (long) Math.pow(10, String.valueOf(rangeMin).length() - String.valueOf(minHashKey).length());
 
