@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.google.common.collect.ImmutableList;
 import com.google.common.geometry.S2CellId;
 import com.google.common.geometry.S2CellUnion;
 import com.google.common.geometry.S2LatLngRect;
@@ -33,20 +34,21 @@ public class GeoQueryHelper {
      * @param query       the original query request
      * @param boundingBox the bounding lat long rectangle of the geo query
      * @param config      the config containing caller's geo config, example index name, etc.
-     * @return queryRequests a collection of <code>QueryRequest</code> that are now "geo enabled"
+     * @return queryRequests an immutable collection of <code>QueryRequest</code> that are now "geo enabled"
      */
     public List<QueryRequest> generateGeoQueries(QueryRequest query, S2LatLngRect boundingBox, GeoConfig config) {
-        List<QueryRequest> queryRequests = new ArrayList<QueryRequest>();
-        List<GeohashRange> geohashRanges = getGeoHashRanges(boundingBox);
+        List<GeohashRange> outerRanges = getGeoHashRanges(boundingBox);
+        List<QueryRequest> queryRequests = new ArrayList<QueryRequest>(outerRanges.size());
         //Create multiple queries based on the geo ranges derived from the bounding box
-        for (GeohashRange outerRange : geohashRanges) {
-            for (GeohashRange range : outerRange.trySplit(config.getGeoHashKeyLength(), s2Manager)) {
+        for (GeohashRange outerRange : outerRanges) {
+            List<GeohashRange> geohashRanges = outerRange.trySplit(config.getGeoHashKeyLength(), s2Manager);
+            for (GeohashRange range : geohashRanges) {
                 //Make a copy of the query request to retain original query attributes like table name, etc.
                 QueryRequest queryRequest = copyQueryRequest(query);
 
                 //generate the hash key for the global secondary index
                 long geohashKey = s2Manager.generateHashKey(range.getRangeMin(), config.getGeoHashKeyLength());
-                Map<String, Condition> keyConditions = new HashMap<String, Condition>();
+                Map<String, Condition> keyConditions = new HashMap<String, Condition>(2, 1.0f);
 
                 Condition geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
                         .withAttributeValueList(new AttributeValue().withN(String.valueOf(geohashKey)));
@@ -65,7 +67,7 @@ public class GeoQueryHelper {
                 queryRequests.add(queryRequest);
             }
         }
-        return queryRequests;
+        return ImmutableList.copyOf(queryRequests);
     }
 
     /**

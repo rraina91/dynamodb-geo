@@ -54,12 +54,16 @@ public class RadiusGeoFilter implements GeoFilter {
     public List<Map<String, AttributeValue>> filter(List<Map<String, AttributeValue>> items) {
         List<Map<String, AttributeValue>> result = new ArrayList<Map<String, AttributeValue>>();
         for (Map<String, AttributeValue> item : items) {
-            String geoJson = item.get(latLongColumn).getS();
-            String[] latLong = geoJson.split(",");
-            S2LatLng latLng = S2LatLng.fromDegrees(Double.valueOf(latLong[0]), Double.valueOf(latLong[1]));
-            if (centerLatLng != null && radiusInMeter > 0
-                    && centerLatLng.getEarthDistance(latLng) <= radiusInMeter) {
-                result.add(item);
+            String latLongStr = item.get(latLongColumn).getS();
+            if (latLongStr != null) {
+                String[] latLong = latLongStr.split(",");
+                if (latLong.length == 2) {
+                    S2LatLng latLng = S2LatLng.fromDegrees(Double.valueOf(latLong[0]), Double.valueOf(latLong[1]));
+                    if (centerLatLng != null && radiusInMeter > 0
+                            && centerLatLng.getEarthDistance(latLng) <= radiusInMeter) {
+                        result.add(item);
+                    }
+                }
             }
         }
         return result;

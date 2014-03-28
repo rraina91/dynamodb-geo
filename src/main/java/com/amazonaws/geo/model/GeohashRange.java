@@ -22,9 +22,10 @@ import com.amazonaws.geo.s2.internal.S2Manager;
 
 public class GeohashRange {
 
+    public static final long MERGE_THRESHOLD = 2;
 	private long rangeMin;
 	private long rangeMax;
-    public static final long MERGE_THRESHOLD = 2;
+
 
 	public GeohashRange(long range1, long range2) {
 		this.rangeMin = Math.min(range1, range2);

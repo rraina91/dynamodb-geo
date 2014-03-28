@@ -19,39 +19,17 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class Geo {
 
-    private final GeoQueryHelper geoQueryHelper;
     private final S2Manager s2Manager;
+    private final GeoQueryHelper geoQueryHelper;
 
     public Geo() {
         this.s2Manager = new S2Manager();
         this.geoQueryHelper = new GeoQueryHelper(s2Manager);
     }
 
-    public Geo(GeoQueryHelper geoQueryHelper, S2Manager s2Manager) {
-        this.geoQueryHelper = geoQueryHelper;
+    public Geo(S2Manager s2Manager, GeoQueryHelper geoQueryHelper) {
         this.s2Manager = s2Manager;
-    }
-
-    /**
-     * Decorates the given <code>putItemRequest</code> with attributes required for geo spatial querying.
-     *
-     * @param putItemRequest   the request that needs to be decorated with geo attributes
-     * @param latitude         the latitude that needs to be attached with the item
-     * @param longitude        the longitude that needs to be attached with the item
-     * @param geoIndexName     name of the global secondary index for geo spatial querying
-     * @param geoHashKeyColumn name of the column that stores the item's geoHashKey. This column is used as a hash key of the global secondary index
-     * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
-     * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
-     * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
-     * @return the decorated request
-     */
-    public PutItemRequest putItemRequest(PutItemRequest putItemRequest, double latitude, double longitude, String geoIndexName,
-                                         String geoHashKeyColumn,
-                                         String geoHashColumn,
-                                         int geoHashKeyLength, String latLongColumn) {
-        GeoConfig config = new GeoConfig.Builder().geoHashColumn(geoHashColumn).geoHashKeyColumn(geoHashKeyColumn).geoHashKeyLength(
-                geoHashKeyLength).geoIndexName(geoIndexName).latLongColumn(latLongColumn).build();
-        return putItemRequest(putItemRequest, latitude, longitude, config);
+        this.geoQueryHelper = geoQueryHelper;
     }
 
     /**
@@ -85,6 +63,28 @@ public class Geo {
         putItemRequest.getItem().put(config.getLatLongColumn(), geoJsonValue);
 
         return putItemRequest;
+    }
+
+    /**
+     * Decorates the given <code>putItemRequest</code> with attributes required for geo spatial querying.
+     *
+     * @param putItemRequest   the request that needs to be decorated with geo attributes
+     * @param latitude         the latitude that needs to be attached with the item
+     * @param longitude        the longitude that needs to be attached with the item
+     * @param geoIndexName     name of the global secondary index for geo spatial querying
+     * @param geoHashKeyColumn name of the column that stores the item's geoHashKey. This column is used as a hash key of the global secondary index
+     * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
+     * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
+     * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
+     * @return the decorated request
+     */
+    public PutItemRequest putItemRequest(PutItemRequest putItemRequest, double latitude, double longitude, String geoIndexName,
+                                         String geoHashKeyColumn,
+                                         String geoHashColumn,
+                                         int geoHashKeyLength, String latLongColumn) {
+        GeoConfig config = new GeoConfig.Builder().geoHashColumn(geoHashColumn).geoHashKeyColumn(geoHashKeyColumn).geoHashKeyLength(
+                geoHashKeyLength).geoIndexName(geoIndexName).latLongColumn(latLongColumn).build();
+        return putItemRequest(putItemRequest, latitude, longitude, config);
     }
 
     /**
@@ -156,7 +156,7 @@ public class Geo {
      * @return the wrapper containing the generated queries and the geo filter
      */
     public GeoQueryRequest radiusQuery(QueryRequest queryRequest, double latitude, double longitude, double radius, GeoConfig config) {
-        checkArgument(radius >= 0.0, "radius has to be a positive value: %s", radius);
+        checkArgument(radius >= 0.0d, "radius has to be a positive value: %s", radius);
         checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength(),
                 config.getLatLongColumn());
         //Center latLong is needed for the radius filter

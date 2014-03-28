@@ -105,4 +105,44 @@ public class GeoConfig {
         }
 
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        GeoConfig geoConfig = (GeoConfig) o;
+
+        if (geoHashKeyLength != geoConfig.geoHashKeyLength) {
+            return false;
+        }
+        if (geoHashColumn != null ? !geoHashColumn.equals(geoConfig.geoHashColumn) : geoConfig.geoHashColumn != null) {
+            return false;
+        }
+        if (geoHashKeyColumn != null ? !geoHashKeyColumn.equals(geoConfig.geoHashKeyColumn) : geoConfig.geoHashKeyColumn != null) {
+            return false;
+        }
+        if (geoIndexName != null ? !geoIndexName.equals(geoConfig.geoIndexName) : geoConfig.geoIndexName != null) {
+            return false;
+        }
+        if (latLongColumn != null ? !latLongColumn.equals(geoConfig.latLongColumn) : geoConfig.latLongColumn != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = geoIndexName != null ? geoIndexName.hashCode() : 0;
+        result = 31 * result + (geoHashKeyColumn != null ? geoHashKeyColumn.hashCode() : 0);
+        result = 31 * result + (geoHashColumn != null ? geoHashColumn.hashCode() : 0);
+        result = 31 * result + geoHashKeyLength;
+        result = 31 * result + (latLongColumn != null ? latLongColumn.hashCode() : 0);
+        return result;
+    }
 }

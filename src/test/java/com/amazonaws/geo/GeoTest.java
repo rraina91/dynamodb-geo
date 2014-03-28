@@ -37,7 +37,7 @@ public class GeoTest {
     public void putItemRequest() {
         GeoQueryHelper geoQueryHelper = mock(GeoQueryHelper.class);
         S2Manager s2Manager = mock(S2Manager.class);
-        Geo geo = new Geo(geoQueryHelper, s2Manager);
+        Geo geo = new Geo(s2Manager,geoQueryHelper);
         double lat = 5.0;
         double longitude = -5.5;
         long geohash = System.currentTimeMillis();
@@ -78,7 +78,7 @@ public class GeoTest {
     public void getItemQuery() {
         GeoQueryHelper geoQueryHelper = mock(GeoQueryHelper.class);
         S2Manager s2Manager = mock(S2Manager.class);
-        Geo geo = new Geo(geoQueryHelper, s2Manager);
+        Geo geo = new Geo(s2Manager, geoQueryHelper);
         double lat = 5.0;
         double longitude = -5.5;
         long geohash = System.currentTimeMillis();
@@ -119,7 +119,7 @@ public class GeoTest {
     public void radiusQuery() {
         GeoQueryHelper geoQueryHelper = mock(GeoQueryHelper.class);
         S2Manager s2Manager = mock(S2Manager.class);
-        Geo geo = new Geo(geoQueryHelper, s2Manager);
+        Geo geo = new Geo(s2Manager, geoQueryHelper);
         double lat = 5.0;
         double longitude = -5.5;
         double radius = 50;
@@ -158,7 +158,7 @@ public class GeoTest {
     public void rectangleQuery() {
         GeoQueryHelper geoQueryHelper = mock(GeoQueryHelper.class);
         S2Manager s2Manager = mock(S2Manager.class);
-        Geo geo = new Geo(geoQueryHelper, s2Manager);
+        Geo geo = new Geo(s2Manager, geoQueryHelper);
         double minLat = 5.0;
         double minLongitude = -5.5;
         double maxLat = 15.0;

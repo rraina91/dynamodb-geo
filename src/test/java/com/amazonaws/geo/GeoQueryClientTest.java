@@ -2,6 +2,7 @@ package com.amazonaws.geo;
 
 import com.amazonaws.geo.model.filters.GeoFilter;
 import com.amazonaws.geo.model.GeoQueryRequest;
+import com.amazonaws.geo.s2.internal.GeoQueryClient;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -22,13 +23,14 @@ import static org.mockito.Mockito.when;
 /**
  * Created by mpuri on 3/26/14.
  */
-public class GeoQueryRequestTest {
+public class GeoQueryClientTest {
 
     @Test
     public void execute() {
-        GeoFilter geoFilter = mock(GeoFilter.class);
         AmazonDynamoDBClient dbClient = mock(AmazonDynamoDBClient.class);
+        GeoFilter geoFilter = mock(GeoFilter.class);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
+        GeoQueryClient geoQueryClient = new GeoQueryClient(dbClient,executorService);
 
         //Mock queries that get fired by the execute method
         List<QueryRequest> queryRequests = new ArrayList<QueryRequest>();
@@ -72,10 +74,9 @@ public class GeoQueryRequestTest {
         filteredList.add(resultItems2.get(0));
         when(geoFilter.filter(resultItems2)).thenReturn(filteredList);
 
-        //invoke execute with mocked args
         GeoQueryRequest geoQueryRequest = new GeoQueryRequest(queryRequests, geoFilter);
         try {
-            List<Map<String, AttributeValue>> results = geoQueryRequest.execute(dbClient, executorService);
+            List<Map<String, AttributeValue>> results = geoQueryClient.execute(geoQueryRequest);
             assertNotNull(results);
             assertEquals(results.size(), 3);
         } catch(InterruptedException ie){
