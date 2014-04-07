@@ -7,3 +7,4 @@ target/
 .DS_Store
 gen/
 out/
+.ply/config/deploy.*
