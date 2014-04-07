@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.amazonaws.geo.model.GeoPoint;
 import com.google.common.geometry.S2Cell;
 import com.google.common.geometry.S2CellId;
 import com.google.common.geometry.S2CellUnion;
@@ -28,7 +27,7 @@ import com.google.common.geometry.S2LatLngRect;
 
 public class S2Manager {
 
-	public static S2CellUnion findCellIds(S2LatLngRect latLngRect) {
+	public S2CellUnion findCellIds(S2LatLngRect latLngRect) {
 
 		ConcurrentLinkedQueue<S2CellId> queue = new ConcurrentLinkedQueue<S2CellId>();
 		ArrayList<S2CellId> cellIds = new ArrayList<S2CellId>();
@@ -55,7 +54,7 @@ public class S2Manager {
 		return null;
 	}
 
-	private static boolean containsGeodataToFind(S2CellId c, S2LatLngRect latLngRect) {
+	private boolean containsGeodataToFind(S2CellId c, S2LatLngRect latLngRect) {
 		if (latLngRect != null) {
 			return latLngRect.intersects(new S2Cell(c));
 		}
@@ -63,7 +62,7 @@ public class S2Manager {
 		return false;
 	}
 
-	private static void processQueue(ConcurrentLinkedQueue<S2CellId> queue, ArrayList<S2CellId> cellIds,
+	private void processQueue(ConcurrentLinkedQueue<S2CellId> queue, ArrayList<S2CellId> cellIds,
 			S2LatLngRect latLngRect) {
 		for (S2CellId c = queue.poll(); c != null; c = queue.poll()) {
 
@@ -75,7 +74,7 @@ public class S2Manager {
 		}
 	}
 
-	private static void processChildren(S2CellId parent, S2LatLngRect latLngRect,
+	private void processChildren(S2CellId parent, S2LatLngRect latLngRect,
 			ConcurrentLinkedQueue<S2CellId> queue, ArrayList<S2CellId> cellIds) {
 		List<S2CellId> children = new ArrayList<S2CellId>(4);
 
@@ -112,15 +111,15 @@ public class S2Manager {
 		}
 	}
 
-	public static long generateGeohash(GeoPoint geoPoint) {
-		S2LatLng latLng = S2LatLng.fromDegrees(geoPoint.getLatitude(), geoPoint.getLongitude());
+	public long generateGeohash(double latitude, double longitude) {
+		S2LatLng latLng = S2LatLng.fromDegrees(latitude, longitude);
 		S2Cell cell = new S2Cell(latLng);
 		S2CellId cellId = cell.id();
 
 		return cellId.id();
 	}
 
-	public static long generateHashKey(long geohash, int hashKeyLength) {
+	public long generateHashKey(long geohash, int hashKeyLength) {
 		if (geohash < 0) {
 			// Counteract "-" at beginning of geohash.
 			hashKeyLength++;
@@ -130,4 +129,44 @@ public class S2Manager {
 		long denominator = (long) Math.pow(10, geohashString.length() - hashKeyLength);
 		return geohash / denominator;
 	}
+
+    /** Creates a bounding box for a radius query
+     * @param latitude the latitude of the radius center
+     * @param longitude the longitude of the radius center
+     * @param radius the radius
+     * @return the bounding box
+     */
+    public S2LatLngRect getBoundingBoxForRadiusQuery(double latitude, double longitude, double radius) {
+        S2LatLng centerLatLng = S2LatLng.fromDegrees(latitude, longitude);
+        double latReferenceUnit = latitude > 0.0 ? -1.0 : 1.0;
+        S2LatLng latReferenceLatLng = S2LatLng.fromDegrees(latitude + latReferenceUnit,
+                longitude);
+        double lngReferenceUnit = longitude > 0.0 ? -1.0 : 1.0;
+        S2LatLng lngReferenceLatLng = S2LatLng.fromDegrees(latitude, longitude
+                + lngReferenceUnit);
+
+        double latForRadius = radius / centerLatLng.getEarthDistance(latReferenceLatLng);
+        double lngForRadius = radius / centerLatLng.getEarthDistance(lngReferenceLatLng);
+
+        S2LatLng minLatLng = S2LatLng.fromDegrees(latitude - latForRadius,
+                longitude - lngForRadius);
+        S2LatLng maxLatLng = S2LatLng.fromDegrees(latitude + latForRadius,
+                longitude + lngForRadius);
+
+        return new S2LatLngRect(minLatLng, maxLatLng);
+    }
+
+    /**
+     * Creates a bounding box for a rectangle query
+     * @param minLatitude the min latitude of the rectangle
+     * @param minLongitude the min longitude of the rectangle
+     * @param maxLatitude the max latitude of the rectangle
+     * @param maxLongitude the max longitude of the rectangle
+     * @return the bounding box
+     */
+    public S2LatLngRect getBoundingBoxForRectangleQuery(double minLatitude, double minLongitude, double maxLatitude, double maxLongitude) {
+        S2LatLng minLatLng = S2LatLng.fromDegrees(minLatitude, minLongitude);
+        S2LatLng maxLatLng = S2LatLng.fromDegrees(maxLatitude, maxLongitude);
+        return new S2LatLngRect(minLatLng, maxLatLng);
+    }
 }
