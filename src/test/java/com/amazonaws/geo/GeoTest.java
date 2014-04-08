@@ -26,7 +26,9 @@ public class GeoTest {
     public void putItemRequestInvalidFields() {
         Geo geo = new Geo();
         try {
-            geo.putItemRequest(new PutItemRequest(), 0.0, 0.0, null, null, null, 0, null);
+            List<GeoConfig> configs = new ArrayList<GeoConfig>();
+            configs.add(new GeoConfig(null, null, null, 0, null));
+            geo.putItemRequest(new PutItemRequest(), 0.0, 0.0, configs);
             fail("Should have failed as there are invalid fields");
         } catch (IllegalArgumentException e) {
             //expected
@@ -37,13 +39,14 @@ public class GeoTest {
     public void putItemRequest() {
         GeoQueryHelper geoQueryHelper = mock(GeoQueryHelper.class);
         S2Manager s2Manager = mock(S2Manager.class);
-        Geo geo = new Geo(s2Manager,geoQueryHelper);
+        Geo geo = new Geo(s2Manager, geoQueryHelper);
         double lat = 5.0;
         double longitude = -5.5;
         long geohash = System.currentTimeMillis();
         long geohashKey = 12345;
-
+        List<GeoConfig> configs = new ArrayList<GeoConfig>();
         GeoConfig config = createTestConfig();
+        configs.add(config);
         String tableName = "TableWithSomeData";
         Map<String, AttributeValue> populatedItem = new HashMap<String, AttributeValue>();
         populatedItem.put("title", new AttributeValue().withS("Ippudo"));
@@ -51,7 +54,7 @@ public class GeoTest {
         when(s2Manager.generateGeohash(lat, longitude)).thenReturn(geohash);
         when(s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength())).thenReturn(geohashKey);
 
-        PutItemRequest withGeoProperties = geo.putItemRequest(request, lat, longitude, config);
+        PutItemRequest withGeoProperties = geo.putItemRequest(request, lat, longitude, configs);
         assertNotNull(withGeoProperties);
         assertEquals(request.getTableName(), withGeoProperties.getTableName());
         assertEquals(request.getItem().get("title"), withGeoProperties.getItem().get("title"));
@@ -134,8 +137,8 @@ public class GeoTest {
         GeoQueryRequest geoQueryRequest = geo.radiusQuery(query, lat, longitude, radius, config);
         assertNotNull(geoQueryRequest);
         assertNotNull(geoQueryRequest.getResultFilter());
-        assertNotNull(((RadiusGeoFilter)geoQueryRequest.getResultFilter()).getCenterLatLng());
-        assertNotNull(((RadiusGeoFilter)geoQueryRequest.getResultFilter()).getRadiusInMeter());
+        assertNotNull(((RadiusGeoFilter) geoQueryRequest.getResultFilter()).getCenterLatLng());
+        assertNotNull(((RadiusGeoFilter) geoQueryRequest.getResultFilter()).getRadiusInMeter());
         assertNotNull(geoQueryRequest.getQueryRequests());
         assertEquals(geoQueryRequest.getQueryRequests(), geoQueries);
         verify(s2Manager, times(1)).getBoundingBoxForRadiusQuery(lat, longitude, radius);
