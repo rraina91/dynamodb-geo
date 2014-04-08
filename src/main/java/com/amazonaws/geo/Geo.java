@@ -38,53 +38,36 @@ public class Geo {
      * @param putItemRequest the request that needs to be decorated with geo attributes
      * @param latitude       the latitude that needs to be attached with the item
      * @param longitude      the longitude that needs to be attached with the item
-     * @param config         the configuration to be used for decorating the request with geo attributes
+     * @param configs        the collection of configurations to be used for decorating the request with geo attributes
      * @return the decorated request
      */
-    public PutItemRequest putItemRequest(PutItemRequest putItemRequest, double latitude, double longitude, GeoConfig config) {
-        //Fail-fast if any of the preconditions fail
-        checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength(),
-                config.getLatLongColumn());
+    public PutItemRequest putItemRequest(PutItemRequest putItemRequest, double latitude, double longitude, List<GeoConfig> configs) {
+        if (configs == null) {
+            throw new IllegalArgumentException("Geo configs should not be null");
+        }
+        for (GeoConfig config : configs) {
+            //Fail-fast if any of the preconditions fail
+            checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(),
+                    config.getGeoHashKeyLength(),
+                    config.getLatLongColumn());
 
-        long geohash = s2Manager.generateGeohash(latitude, longitude);
-        long geoHashKey = s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength());
-        String geoJson = latLongStr(latitude, longitude);
+            long geohash = s2Manager.generateGeohash(latitude, longitude);
+            long geoHashKey = s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength());
+            String geoJson = latLongStr(latitude, longitude);
 
-        //Decorate the request with the geohash
-        AttributeValue geoHashValue = new AttributeValue().withN(Long.toString(geohash));
-        putItemRequest.getItem().put(config.getGeoHashColumn(), geoHashValue);
+            //Decorate the request with the geohash
+            AttributeValue geoHashValue = new AttributeValue().withN(Long.toString(geohash));
+            putItemRequest.getItem().put(config.getGeoHashColumn(), geoHashValue);
 
-        //Decorate the request with the geoHashKey
-        AttributeValue geoHashKeyValue = new AttributeValue().withN(String.valueOf(geoHashKey));
-        putItemRequest.getItem().put(config.getGeoHashKeyColumn(), geoHashKeyValue);
+            //Decorate the request with the geoHashKey
+            AttributeValue geoHashKeyValue = new AttributeValue().withN(String.valueOf(geoHashKey));
+            putItemRequest.getItem().put(config.getGeoHashKeyColumn(), geoHashKeyValue);
 
-        //Decorate the request with a json representation of the lat/long
-        AttributeValue geoJsonValue = new AttributeValue().withS(geoJson);
-        putItemRequest.getItem().put(config.getLatLongColumn(), geoJsonValue);
-
+            //Decorate the request with a json representation of the lat/long
+            AttributeValue geoJsonValue = new AttributeValue().withS(geoJson);
+            putItemRequest.getItem().put(config.getLatLongColumn(), geoJsonValue);
+        }
         return putItemRequest;
-    }
-
-    /**
-     * Decorates the given <code>putItemRequest</code> with attributes required for geo spatial querying.
-     *
-     * @param putItemRequest   the request that needs to be decorated with geo attributes
-     * @param latitude         the latitude that needs to be attached with the item
-     * @param longitude        the longitude that needs to be attached with the item
-     * @param geoIndexName     name of the global secondary index for geo spatial querying
-     * @param geoHashKeyColumn name of the column that stores the item's geoHashKey. This column is used as a hash key of the global secondary index
-     * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
-     * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
-     * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
-     * @return the decorated request
-     */
-    public PutItemRequest putItemRequest(PutItemRequest putItemRequest, double latitude, double longitude, String geoIndexName,
-                                         String geoHashKeyColumn,
-                                         String geoHashColumn,
-                                         int geoHashKeyLength, String latLongColumn) {
-        GeoConfig config = new GeoConfig.Builder().geoHashColumn(geoHashColumn).geoHashKeyColumn(geoHashKeyColumn).geoHashKeyLength(
-                geoHashKeyLength).geoIndexName(geoIndexName).latLongColumn(latLongColumn).build();
-        return putItemRequest(putItemRequest, latitude, longitude, config);
     }
 
     /**
