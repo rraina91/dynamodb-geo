@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.geometry.S2CellId;
 import com.google.common.geometry.S2CellUnion;
@@ -34,9 +35,12 @@ public class GeoQueryHelper {
      * @param query       the original query request
      * @param boundingBox the bounding lat long rectangle of the geo query
      * @param config      the config containing caller's geo config, example index name, etc.
+     * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
+     *                          This is needed when constructing queries that need a composite hash key.
+     *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return queryRequests an immutable collection of <code>QueryRequest</code> that are now "geo enabled"
      */
-    public List<QueryRequest> generateGeoQueries(QueryRequest query, S2LatLngRect boundingBox, GeoConfig config) {
+    public List<QueryRequest> generateGeoQueries(QueryRequest query, S2LatLngRect boundingBox, GeoConfig config, Optional<String> compositeKeyValue) {
         List<GeohashRange> outerRanges = getGeoHashRanges(boundingBox);
         List<QueryRequest> queryRequests = new ArrayList<QueryRequest>(outerRanges.size());
         //Create multiple queries based on the geo ranges derived from the bounding box
@@ -50,8 +54,16 @@ public class GeoQueryHelper {
                 long geohashKey = s2Manager.generateHashKey(range.getRangeMin(), config.getGeoHashKeyLength());
                 Map<String, Condition> keyConditions = new HashMap<String, Condition>(2, 1.0f);
 
-                Condition geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                        .withAttributeValueList(new AttributeValue().withN(String.valueOf(geohashKey)));
+                //Construct the hashKey condition
+                Condition geoHashKeyCondition;
+                if (config.getHashKeyDecorator().isPresent() && compositeKeyValue.isPresent()) {
+                    String compositeHashKey = config.getHashKeyDecorator().get().decorate(compositeKeyValue.get(), geohashKey);
+                    geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
+                            .withAttributeValueList(new AttributeValue().withS(compositeHashKey));
+                } else {
+                    geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
+                            .withAttributeValueList(new AttributeValue().withN(String.valueOf(geohashKey)));
+                }
                 keyConditions.put(config.getGeoHashKeyColumn(), geoHashKeyCondition);
 
                 //generate the geo hash range

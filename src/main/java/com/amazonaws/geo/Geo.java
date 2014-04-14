@@ -5,6 +5,7 @@ import com.amazonaws.geo.model.filters.GeoFilter;
 import com.amazonaws.geo.model.filters.GeoFilters;
 import com.amazonaws.geo.s2.internal.S2Manager;
 import com.amazonaws.services.dynamodbv2.model.*;
+import com.google.common.base.Optional;
 import com.google.common.geometry.S2LatLng;
 import com.google.common.geometry.S2LatLngRect;
 
@@ -59,8 +60,20 @@ public class Geo {
             AttributeValue geoHashValue = new AttributeValue().withN(Long.toString(geohash));
             putItemRequest.getItem().put(config.getGeoHashColumn(), geoHashValue);
 
-            //Decorate the request with the geoHashKey
-            AttributeValue geoHashKeyValue = new AttributeValue().withN(String.valueOf(geoHashKey));
+            AttributeValue geoHashKeyValue;
+            if (config.getHashKeyDecorator().isPresent() && config.getCompositeHashKeyColumn().isPresent()) {
+                AttributeValue compositeHashKeyValue = putItemRequest.getItem().get(config.getCompositeHashKeyColumn().get());
+                if (compositeHashKeyValue == null) {
+                    throw new AssertionError("Composite hash key column value should not be null");
+                }
+                String compositeColumnValue = compositeHashKeyValue.getS();
+                String hashKey = config.getHashKeyDecorator().get().decorate(compositeColumnValue, geoHashKey);
+                //Decorate the request with the composite geoHashKey (type String)
+                geoHashKeyValue = new AttributeValue().withS(String.valueOf(hashKey));
+            } else {
+                //Decorate the request with the geoHashKey (type Number)
+                geoHashKeyValue = new AttributeValue().withN(String.valueOf(geoHashKey));
+            }
             putItemRequest.getItem().put(config.getGeoHashKeyColumn(), geoHashKeyValue);
 
             //Decorate the request with a json representation of the lat/long
@@ -77,9 +90,13 @@ public class Geo {
      * @param latitude     the latitude of the item that is being queried
      * @param longitude    the longitude of the item that is being queried
      * @param config       the configuration to be used for decorating the request with geo attributes
+     * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
+     *                          This is needed when constructing queries that need a composite hash key.
+     *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the decorated request
      */
-    public QueryRequest getItemQuery(QueryRequest queryRequest, double latitude, double longitude, GeoConfig config) {
+    public QueryRequest getItemQuery(QueryRequest queryRequest, double latitude, double longitude, GeoConfig config,
+                                     Optional<String> compositeKeyValue) {
         checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength(),
                 config.getLatLongColumn());
 
@@ -89,9 +106,16 @@ public class Geo {
         queryRequest.withIndexName(config.getGeoIndexName());
         Map<String, Condition> keyConditions = new HashMap<String, Condition>();
 
-        //Construct the geohashKey condition
-        Condition geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                .withAttributeValueList(new AttributeValue().withN(String.valueOf(geoHashKey)));
+        //Construct the hashKey condition
+        Condition geoHashKeyCondition;
+        if (config.getHashKeyDecorator().isPresent() && compositeKeyValue.isPresent()) {
+            String hashKey = config.getHashKeyDecorator().get().decorate(compositeKeyValue.get(), geoHashKey);
+            geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
+                    .withAttributeValueList(new AttributeValue().withS(hashKey));
+        } else {
+            geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
+                    .withAttributeValueList(new AttributeValue().withN(String.valueOf(geoHashKey)));
+        }
         keyConditions.put(config.getGeoHashKeyColumn(), geoHashKeyCondition);
 
         //Construct the geohash condition
@@ -114,15 +138,18 @@ public class Geo {
      * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
      * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
      * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
+     * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
+     *                          This is needed when constructing queries that need a composite hash key.
+     *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the decorated request
      */
     public QueryRequest getItemQuery(QueryRequest queryRequest, double latitude, double longitude, String geoIndexName,
                                      String geoHashKeyColumn,
                                      String geoHashColumn,
-                                     int geoHashKeyLength, String latLongColumn) {
+                                     int geoHashKeyLength, String latLongColumn, Optional<String> compositeKeyValue) {
         GeoConfig config = new GeoConfig.Builder().geoHashColumn(geoHashColumn).geoHashKeyColumn(geoHashKeyColumn).geoHashKeyLength(
                 geoHashKeyLength).geoIndexName(geoIndexName).latLongColumn(latLongColumn).build();
-        return getItemQuery(queryRequest, latitude, longitude, config);
+        return getItemQuery(queryRequest, latitude, longitude, config, compositeKeyValue);
     }
 
     /**
@@ -136,9 +163,12 @@ public class Geo {
      * @param longitude    the longitude of the center point for the radius query
      * @param radius       the radius (in metres)
      * @param config       the configuration to be used for decorating the request with geo attributes
+     * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
+     *                          This is needed when constructing queries that need a composite hash key.
+     *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the wrapper containing the generated queries and the geo filter
      */
-    public GeoQueryRequest radiusQuery(QueryRequest queryRequest, double latitude, double longitude, double radius, GeoConfig config) {
+    public GeoQueryRequest radiusQuery(QueryRequest queryRequest, double latitude, double longitude, double radius, GeoConfig config, Optional<String> compositeKeyValue) {
         checkArgument(radius >= 0.0d, "radius has to be a positive value: %s", radius);
         checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength(),
                 config.getLatLongColumn());
@@ -147,7 +177,7 @@ public class Geo {
         GeoFilter filter = GeoFilters.newRadiusFilter(centerLatLng, radius, config.getLatLongColumn());
         //Bounding box is needed to generate queries for each cell that intersects with the bounding box
         S2LatLngRect boundingBox = s2Manager.getBoundingBoxForRadiusQuery(latitude, longitude, radius);
-        List<QueryRequest> geoQueries = geoQueryHelper.generateGeoQueries(queryRequest, boundingBox, config);
+        List<QueryRequest> geoQueries = geoQueryHelper.generateGeoQueries(queryRequest, boundingBox, config, compositeKeyValue);
         return new GeoQueryRequest(geoQueries, filter);
     }
 
@@ -166,15 +196,18 @@ public class Geo {
      * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
      * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
      * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
+     * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
+     *                          This is needed when constructing queries that need a composite hash key.
+     *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the wrapper containing the generated queries and the geo filter
      */
     public GeoQueryRequest radiusQuery(QueryRequest queryRequest, double latitude, double longitude, double radius, String geoIndexName,
                                        String geoHashKeyColumn,
                                        String geoHashColumn,
-                                       int geoHashKeyLength, String latLongColumn) {
+                                       int geoHashKeyLength, String latLongColumn, Optional<String> compositeKeyValue) {
         GeoConfig config = new GeoConfig.Builder().geoHashColumn(geoHashColumn).geoHashKeyColumn(geoHashKeyColumn).geoHashKeyLength(
                 geoHashKeyLength).geoIndexName(geoIndexName).latLongColumn(latLongColumn).build();
-        return radiusQuery(queryRequest, latitude, longitude, radius, config);
+        return radiusQuery(queryRequest, latitude, longitude, radius, config, compositeKeyValue);
     }
 
     /**
@@ -189,17 +222,20 @@ public class Geo {
      * @param maxLatitude  the latitude of the max point of the rectangle
      * @param maxLongitude the longitude of the max point of the rectangle
      * @param config       the configuration to be used for decorating the request with geo attributes
+     * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
+     *                          This is needed when constructing queries that need a composite hash key.
+     *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the wrapper containing the generated queries and the geo filter
      */
     public GeoQueryRequest rectangleQuery(QueryRequest queryRequest, double minLatitude, double minLongitude, double maxLatitude,
-                                          double maxLongitude, GeoConfig config) {
+                                          double maxLongitude, GeoConfig config, Optional<String> compositeKeyValue) {
         checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength(),
                 config.getLatLongColumn());
         // bounding box is needed for the filter and to generate the queries
         // for each cell that intersects with the bounding box
         S2LatLngRect boundingBox = s2Manager.getBoundingBoxForRectangleQuery(minLatitude, minLongitude, maxLatitude, maxLongitude);
         GeoFilter filter = GeoFilters.newRectangleFilter(boundingBox, config.getLatLongColumn());
-        List<QueryRequest> geoQueries = geoQueryHelper.generateGeoQueries(queryRequest, boundingBox, config);
+        List<QueryRequest> geoQueries = geoQueryHelper.generateGeoQueries(queryRequest, boundingBox, config, compositeKeyValue);
         return new GeoQueryRequest(geoQueries, filter);
     }
 
@@ -219,16 +255,19 @@ public class Geo {
      * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
      * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
      * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
+     * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
+     *                          This is needed when constructing queries that need a composite hash key.
+     *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the wrapper containing the generated queries and the geo filter
      */
     public GeoQueryRequest rectangleQuery(QueryRequest queryRequest, double minLatitude, double minLongitude, double maxLatitude,
                                           double maxLongitude, String geoIndexName,
                                           String geoHashKeyColumn,
                                           String geoHashColumn,
-                                          int geoHashKeyLength, String latLongColumn) {
+                                          int geoHashKeyLength, String latLongColumn, Optional<String> compositeKeyValue) {
         GeoConfig config = new GeoConfig.Builder().geoHashColumn(geoHashColumn).geoHashKeyColumn(geoHashKeyColumn).geoHashKeyLength(
                 geoHashKeyLength).geoIndexName(geoIndexName).latLongColumn(latLongColumn).build();
-        return rectangleQuery(queryRequest, minLatitude, minLongitude, maxLatitude, maxLongitude, config);
+        return rectangleQuery(queryRequest, minLatitude, minLongitude, maxLatitude, maxLongitude, config, compositeKeyValue);
     }
 
     /**
