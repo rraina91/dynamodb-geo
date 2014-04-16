@@ -51,8 +51,8 @@ public class GeoConfig {
         this.geoHashColumn = geoHashColumn;
         this.geoHashKeyLength = geoHashKeyLength;
         this.latLongColumn = latLongColumn;
-        this.hashKeyDecorator = hashKeyDecorator;
-        this.compositeHashKeyColumn = compositeHashKeyColumn;
+        this.hashKeyDecorator = hashKeyDecorator == null ? Optional.<HashKeyDecorator>absent() : hashKeyDecorator;
+        this.compositeHashKeyColumn = compositeHashKeyColumn == null ? Optional.<String>absent() : compositeHashKeyColumn;
     }
 
     public String getGeoIndexName() {
