@@ -64,7 +64,7 @@ public class Geo {
             if (config.getHashKeyDecorator().isPresent() && config.getCompositeHashKeyColumn().isPresent()) {
                 AttributeValue compositeHashKeyValue = putItemRequest.getItem().get(config.getCompositeHashKeyColumn().get());
                 if (compositeHashKeyValue == null) {
-                    throw new AssertionError("Composite hash key column value should not be null");
+                    continue;
                 }
                 String compositeColumnValue = compositeHashKeyValue.getS();
                 String hashKey = config.getHashKeyDecorator().get().decorate(compositeColumnValue, geoHashKey);

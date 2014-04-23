@@ -97,9 +97,28 @@ public class GeoTest {
         verify(s2Manager, times(1)).generateGeohash(lat, longitude);
         verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
         verifyNoMoreInteractions(s2Manager);
+
+        reset(s2Manager);
+
+        // test where the composite value is null, the composite GSI should not be added to the put-item request
+        populatedItem.clear();
+        populatedItem.put("title", new AttributeValue().withS("Ippudo"));
+        request = new PutItemRequest().withTableName(tableName).withItem(populatedItem);
+        when(s2Manager.generateGeohash(lat, longitude)).thenReturn(geohash);
+        when(s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength())).thenReturn(geohashKey);
+
+        withGeoProperties = geo.putItemRequest(request, lat, longitude, configs);
+        assertNotNull(withGeoProperties);
+        assertEquals(request.getTableName(), withGeoProperties.getTableName());
+        assertEquals(request.getItem().get("title"), withGeoProperties.getItem().get("title"));
+        assertEquals(withGeoProperties.getItem().get(config.getGeoHashColumn()).getN(), String.valueOf(geohash));
+        assertNull(withGeoProperties.getItem().get(config.getGeoHashKeyColumn()));
+        assertNull(withGeoProperties.getItem().get(config.getLatLongColumn()));
+        verify(s2Manager, times(1)).generateGeohash(lat, longitude);
+        verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
+        verifyNoMoreInteractions(s2Manager);
+
     }
-
-
 
     @Test
     public void getItemQueryInvalidFields() {
