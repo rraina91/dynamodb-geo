@@ -24,8 +24,11 @@ import com.google.common.geometry.S2CellId;
 import com.google.common.geometry.S2CellUnion;
 import com.google.common.geometry.S2LatLng;
 import com.google.common.geometry.S2LatLngRect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class S2Manager {
+    private static final Logger LOG = LoggerFactory.getLogger(S2Manager.class);
 
 	public S2CellUnion findCellIds(S2LatLngRect latLngRect) {
 
@@ -127,7 +130,11 @@ public class S2Manager {
 
 		String geohashString = String.valueOf(geohash);
 		long denominator = (long) Math.pow(10, geohashString.length() - hashKeyLength);
-		return geohash / denominator;
+        if (denominator == 0) { //  can happen if geohashString.length() < geohash
+            LOG.warn("Returning the geohash [{}] as the geoHashKey, since the hashKeyLength [{}] is greater than the length of the geohash", geohash, hashKeyLength);
+            return geohash;
+        }
+        return geohash / denominator;
 	}
 
     /** Creates a bounding box for a radius query
