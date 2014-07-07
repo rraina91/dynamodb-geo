@@ -3,7 +3,8 @@ package com.amazonaws.geo;
 import com.amazonaws.geo.s2.internal.S2Manager;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
+
 
 /**
  * Created by mpuri on 6/2/14.
