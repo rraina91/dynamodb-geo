@@ -45,8 +45,8 @@ public class RectangleGeoFilter implements GeoFilter {
     public List<Map<String, AttributeValue>> filter(List<Map<String, AttributeValue>> items) {
         List<Map<String, AttributeValue>> result = new ArrayList<Map<String, AttributeValue>>();
         for (Map<String, AttributeValue> item : items) {
-            String latLongStr = item.get(latLongColumn).getS();
-            if (latLongStr != null) {
+            if (item.get(latLongColumn) != null && item.get(latLongColumn).getS() != null) {
+                String latLongStr = item.get(latLongColumn).getS();
                 String[] latLong = latLongStr.split(",");
                 if (latLong.length == 2) {
                     S2LatLng latLng = S2LatLng.fromDegrees(Double.valueOf(latLong[0]), Double.valueOf(latLong[1]));
