@@ -11,6 +11,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.geometry.S2CellId;
 import com.google.common.geometry.S2CellUnion;
 import com.google.common.geometry.S2LatLngRect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +25,8 @@ import java.util.Map;
 public class GeoQueryHelper {
 
     private final S2Manager s2Manager;
+
+    private static final Logger LOG = LoggerFactory.getLogger(GeoQueryHelper.class.getSimpleName());
 
     public GeoQueryHelper(S2Manager s2Manager) {
         this.s2Manager = s2Manager;
@@ -102,6 +106,9 @@ public class GeoQueryHelper {
      */
     private List<GeohashRange> mergeCells(S2CellUnion cellUnion) {
         List<S2CellId> cellIds = cellUnion.cellIds();
+       if (cellIds.size() > 1000) {
+           LOG.warn("Created [{}] cell ids", cellIds.size());
+       }
         List<GeohashRange> ranges = new ArrayList<>(cellIds.size());
         for (S2CellId c : cellIds) {
             GeohashRange range = new GeohashRange(c.rangeMin().id(), c.rangeMax().id());
