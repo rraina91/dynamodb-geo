@@ -101,10 +101,10 @@ public class GeoQueryHelper {
      * @return A list of merged GeohashRanges.
      */
     private List<GeohashRange> mergeCells(S2CellUnion cellUnion) {
-        List<GeohashRange> ranges = new ArrayList<GeohashRange>();
-        for (S2CellId c : cellUnion.cellIds()) {
+        List<S2CellId> cellIds = cellUnion.cellIds();
+        List<GeohashRange> ranges = new ArrayList<>(cellIds.size());
+        for (S2CellId c : cellIds) {
             GeohashRange range = new GeohashRange(c.rangeMin().id(), c.rangeMax().id());
-
             boolean wasMerged = false;
             for (GeohashRange r : ranges) {
                 if (r.tryMerge(range)) {
