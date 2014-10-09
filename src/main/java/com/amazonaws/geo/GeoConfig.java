@@ -3,7 +3,7 @@ package com.amazonaws.geo;
 import com.google.common.base.Optional;
 
 /**
- * Created by mpuri on 3/24/14.
+ * Created by mpuri on 3/24/14
  */
 public class GeoConfig {
 
@@ -31,11 +31,6 @@ public class GeoConfig {
     private final int geoHashKeyLength;
 
     /**
-     * The column containing a string representation of the item's lat/long.
-     */
-    private final String latLongColumn;
-
-    /**
      * An optional decorator used to construct the geoHashKey using a composite key.
      */
     private final Optional<HashKeyDecorator> hashKeyDecorator;
@@ -45,12 +40,11 @@ public class GeoConfig {
      */
     private final Optional<String> compositeHashKeyColumn;
 
-    public GeoConfig(String geoIndexName, String geoHashKeyColumn, String geoHashColumn, int geoHashKeyLength, String latLongColumn, Optional<HashKeyDecorator> hashKeyDecorator, Optional<String> compositeHashKeyColumn) {
+    public GeoConfig(String geoIndexName, String geoHashKeyColumn, String geoHashColumn, int geoHashKeyLength, Optional<HashKeyDecorator> hashKeyDecorator, Optional<String> compositeHashKeyColumn) {
         this.geoIndexName = geoIndexName;
         this.geoHashKeyColumn = geoHashKeyColumn;
         this.geoHashColumn = geoHashColumn;
         this.geoHashKeyLength = geoHashKeyLength;
-        this.latLongColumn = latLongColumn;
         this.hashKeyDecorator = hashKeyDecorator == null ? Optional.<HashKeyDecorator>absent() : hashKeyDecorator;
         this.compositeHashKeyColumn = compositeHashKeyColumn == null ? Optional.<String>absent() : compositeHashKeyColumn;
     }
@@ -69,10 +63,6 @@ public class GeoConfig {
 
     public int getGeoHashKeyLength() {
         return geoHashKeyLength;
-    }
-
-    public String getLatLongColumn() {
-        return latLongColumn;
     }
 
     public Optional<HashKeyDecorator> getHashKeyDecorator() {
@@ -135,7 +125,7 @@ public class GeoConfig {
         }
 
         public GeoConfig build() {
-            return new GeoConfig(this.geoIndexName, this.geoHashKeyColumn, this.geoHashColumn, this.geoHashKeyLength, this.latLongColumn, this.hashKeyDecorator, this.compositeHashKeyColumn);
+            return new GeoConfig(this.geoIndexName, this.geoHashKeyColumn, this.geoHashColumn, this.geoHashKeyLength, this.hashKeyDecorator, this.compositeHashKeyColumn);
         }
 
     }
@@ -163,9 +153,6 @@ public class GeoConfig {
         if (geoIndexName != null ? !geoIndexName.equals(geoConfig.geoIndexName) : geoConfig.geoIndexName != null) {
             return false;
         }
-        if (latLongColumn != null ? !latLongColumn.equals(geoConfig.latLongColumn) : geoConfig.latLongColumn != null) {
-            return false;
-        }
         if (compositeHashKeyColumn != null ? !compositeHashKeyColumn.equals(geoConfig.compositeHashKeyColumn) : geoConfig.compositeHashKeyColumn != null) {
             return false;
         }
@@ -179,7 +166,6 @@ public class GeoConfig {
         result = 31 * result + (geoHashKeyColumn != null ? geoHashKeyColumn.hashCode() : 0);
         result = 31 * result + (geoHashColumn != null ? geoHashColumn.hashCode() : 0);
         result = 31 * result + geoHashKeyLength;
-        result = 31 * result + (latLongColumn != null ? latLongColumn.hashCode() : 0);
         result = 31 * result + (compositeHashKeyColumn != null ? compositeHashKeyColumn.hashCode() : 0);
         return result;
     }

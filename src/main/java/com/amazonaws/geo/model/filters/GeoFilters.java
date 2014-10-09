@@ -14,22 +14,20 @@ public class GeoFilters {
      *
      * @param centerLatLng      the lat/long of the center of the filter's radius
      * @param radiusInMeter     the radius of the filter in metres
-     * @param latLongJsonColumn the column containing an item's lat/long as a json value.
      * @return a new instance of the {@link RadiusGeoFilter}
      */
-    public static GeoFilter newRadiusFilter(S2LatLng centerLatLng, double radiusInMeter, String latLongJsonColumn) {
-        return new RadiusGeoFilter(centerLatLng, radiusInMeter, latLongJsonColumn);
+    public static GeoFilter newRadiusFilter(S2LatLng centerLatLng, double radiusInMeter) {
+        return new RadiusGeoFilter(centerLatLng, radiusInMeter);
     }
 
     /**
      * Factory method to create a filter used by rectangle queries
      *
      * @param latLngRect the bounding box for the filter
-     * @param latLongJsonColumn the column containing an item's lat/long as a json value.
      * @return a new instance of the {@link RectangleGeoFilter}
      */
-    public static GeoFilter newRectangleFilter(S2LatLngRect latLngRect, String latLongJsonColumn) {
-        return new RectangleGeoFilter(latLngRect, latLongJsonColumn);
+    public static GeoFilter newRectangleFilter(S2LatLngRect latLngRect) {
+        return new RectangleGeoFilter(latLngRect);
     }
 
 }
