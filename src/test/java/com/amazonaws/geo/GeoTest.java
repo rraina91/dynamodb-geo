@@ -28,7 +28,7 @@ public class GeoTest {
         Geo geo = new Geo();
         try {
             List<GeoConfig> configs = new ArrayList<GeoConfig>();
-            configs.add(new GeoConfig(null, null, null, 0, null, Optional.<HashKeyDecorator>absent(), null));
+            configs.add(new GeoConfig(null, null, null, 0, Optional.<HashKeyDecorator>absent(), null));
             geo.putItemRequest(new PutItemRequest(), 0.0, 0.0, configs);
             fail("Should have failed as there are invalid fields");
         } catch (IllegalArgumentException e) {
@@ -61,7 +61,6 @@ public class GeoTest {
         assertEquals(request.getItem().get("title"), withGeoProperties.getItem().get("title"));
         assertEquals(withGeoProperties.getItem().get(config.getGeoHashColumn()).getN(), String.valueOf(geohash));
         assertEquals(withGeoProperties.getItem().get(config.getGeoHashKeyColumn()).getN(), String.valueOf(geohashKey));
-        assertNotNull(withGeoProperties.getItem().get(config.getLatLongColumn()).getS());
         verify(s2Manager, times(1)).generateGeohash(lat, longitude);
         verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
         verifyNoMoreInteractions(s2Manager);
@@ -93,7 +92,6 @@ public class GeoTest {
         assertEquals(request.getItem().get("title"), withGeoProperties.getItem().get("title"));
         assertEquals(withGeoProperties.getItem().get(config.getGeoHashColumn()).getN(), String.valueOf(geohash));
         assertEquals(withGeoProperties.getItem().get(config.getGeoHashKeyColumn()).getS(), new DefaultHashKeyDecorator().decorate("restaurant", geohashKey));
-        assertNotNull(withGeoProperties.getItem().get(config.getLatLongColumn()).getS());
         verify(s2Manager, times(1)).generateGeohash(lat, longitude);
         verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
         verifyNoMoreInteractions(s2Manager);
@@ -113,7 +111,6 @@ public class GeoTest {
         assertEquals(request.getItem().get("title"), withGeoProperties.getItem().get("title"));
         assertEquals(withGeoProperties.getItem().get(config.getGeoHashColumn()).getN(), String.valueOf(geohash));
         assertNull(withGeoProperties.getItem().get(config.getGeoHashKeyColumn()));
-        assertNull(withGeoProperties.getItem().get(config.getLatLongColumn()));
         verify(s2Manager, times(1)).generateGeohash(lat, longitude);
         verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
         verifyNoMoreInteractions(s2Manager);

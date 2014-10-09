@@ -16,7 +16,7 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * Created by mpuri on 3/24/14.
+ * Created by mpuri on 3/24/14
  */
 public class Geo {
 
@@ -49,12 +49,10 @@ public class Geo {
         for (GeoConfig config : configs) {
             //Fail-fast if any of the preconditions fail
             checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(),
-                    config.getGeoHashKeyLength(),
-                    config.getLatLongColumn());
+                    config.getGeoHashKeyLength());
 
             long geohash = s2Manager.generateGeohash(latitude, longitude);
             long geoHashKey = s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength());
-            String geoJson = latLongStr(latitude, longitude);
 
             //Decorate the request with the geohash
             AttributeValue geoHashValue = new AttributeValue().withN(Long.toString(geohash));
@@ -75,10 +73,6 @@ public class Geo {
                 geoHashKeyValue = new AttributeValue().withN(String.valueOf(geoHashKey));
             }
             putItemRequest.getItem().put(config.getGeoHashKeyColumn(), geoHashKeyValue);
-
-            //Decorate the request with a json representation of the lat/long
-            AttributeValue geoJsonValue = new AttributeValue().withS(geoJson);
-            putItemRequest.getItem().put(config.getLatLongColumn(), geoJsonValue);
         }
         return putItemRequest;
     }
@@ -97,8 +91,7 @@ public class Geo {
      */
     public QueryRequest getItemQuery(QueryRequest queryRequest, double latitude, double longitude, GeoConfig config,
                                      Optional<String> compositeKeyValue) {
-        checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength(),
-                config.getLatLongColumn());
+        checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength());
 
         //Generate the geohash and geoHashKey to query by global secondary index
         long geohash = s2Manager.generateGeohash(latitude, longitude);
@@ -170,11 +163,10 @@ public class Geo {
      */
     public GeoQueryRequest radiusQuery(QueryRequest queryRequest, double latitude, double longitude, double radius, GeoConfig config, Optional<String> compositeKeyValue) {
         checkArgument(radius >= 0.0d, "radius has to be a positive value: %s", radius);
-        checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength(),
-                config.getLatLongColumn());
+        checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength());
         //Center latLong is needed for the radius filter
         S2LatLng centerLatLng = S2LatLng.fromDegrees(latitude, longitude);
-        GeoFilter filter = GeoFilters.newRadiusFilter(centerLatLng, radius, config.getLatLongColumn());
+        GeoFilter filter = GeoFilters.newRadiusFilter(centerLatLng, radius);
         //Bounding box is needed to generate queries for each cell that intersects with the bounding box
         S2LatLngRect boundingBox = s2Manager.getBoundingBoxForRadiusQuery(latitude, longitude, radius);
         List<QueryRequest> geoQueries = geoQueryHelper.generateGeoQueries(queryRequest, boundingBox, config, compositeKeyValue);
@@ -229,12 +221,11 @@ public class Geo {
      */
     public GeoQueryRequest rectangleQuery(QueryRequest queryRequest, double minLatitude, double minLongitude, double maxLatitude,
                                           double maxLongitude, GeoConfig config, Optional<String> compositeKeyValue) {
-        checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength(),
-                config.getLatLongColumn());
+        checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength());
         // bounding box is needed for the filter and to generate the queries
         // for each cell that intersects with the bounding box
         S2LatLngRect boundingBox = s2Manager.getBoundingBoxForRectangleQuery(minLatitude, minLongitude, maxLatitude, maxLongitude);
-        GeoFilter filter = GeoFilters.newRectangleFilter(boundingBox, config.getLatLongColumn());
+        GeoFilter filter = GeoFilters.newRectangleFilter(boundingBox);
         List<QueryRequest> geoQueries = geoQueryHelper.generateGeoQueries(queryRequest, boundingBox, config, compositeKeyValue);
         return new GeoQueryRequest(geoQueries, filter);
     }
@@ -277,29 +268,12 @@ public class Geo {
      * @param geoHashKeyColumn name of the column that stores the item's geoHashKey. This column is used as a hash key of the global secondary index
      * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
      * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
-     * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
      */
-    private void checkConfigParams(String geoIndexName, String geoHashKeyColumn, String geoHashColumn, int geoHashKeyLength,
-                                   String latLongColumn) {
+    private void checkConfigParams(String geoIndexName, String geoHashKeyColumn, String geoHashColumn, int geoHashKeyLength) {
         checkArgument((geoIndexName != null && geoIndexName.length() > 0), "geoIndexName cannot be empty: %s", geoIndexName);
         checkArgument((geoHashKeyColumn != null && geoHashKeyColumn.length() > 0), "geoHashKeyColumn cannot be empty: %s",
                 geoHashKeyColumn);
         checkArgument((geoHashColumn != null && geoHashColumn.length() > 0), "geoHashColumn cannot be empty: %s", geoHashColumn);
         checkArgument(geoHashKeyLength > 0, "geoHashKeyLength must be a positive number: %s", String.valueOf(geoHashKeyLength));
-        checkArgument(latLongColumn != null && latLongColumn.length() > 0, "latLongColumn cannot be empty: %s",
-                String.valueOf(latLongColumn));
-
     }
-
-    /**
-     * Creates a string representation of the lat/long
-     *
-     * @param latitude  the latitude
-     * @param longitude the longitude
-     * @return string representation of the lat/long.
-     */
-    private String latLongStr(double latitude, double longitude) {
-        return String.format("%f,%f", latitude, longitude);
-    }
-
 }

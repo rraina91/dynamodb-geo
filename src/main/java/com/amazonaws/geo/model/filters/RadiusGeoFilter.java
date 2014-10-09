@@ -22,15 +22,9 @@ public class RadiusGeoFilter implements GeoFilter {
      */
     private final double radiusInMeter;
 
-    /**
-     * Column containing the item's lat/long as a string - used for reverse lookup.
-     */
-    private final String latLongColumn;
-
-    public RadiusGeoFilter(S2LatLng centerLatLng, double radiusInMeter, String latLongColumn) {
+    public RadiusGeoFilter(S2LatLng centerLatLng, double radiusInMeter) {
         this.centerLatLng = centerLatLng;
         this.radiusInMeter = radiusInMeter;
-        this.latLongColumn = latLongColumn;
     }
 
     public S2LatLng getCenterLatLng() {
@@ -39,10 +33,6 @@ public class RadiusGeoFilter implements GeoFilter {
 
     public double getRadiusInMeter() {
         return radiusInMeter;
-    }
-
-    public String getLatLongColumn() {
-        return latLongColumn;
     }
 
     /**
@@ -54,15 +44,13 @@ public class RadiusGeoFilter implements GeoFilter {
     public List<Map<String, AttributeValue>> filter(List<Map<String, AttributeValue>> items) {
         List<Map<String, AttributeValue>> result = new ArrayList<Map<String, AttributeValue>>();
         for (Map<String, AttributeValue> item : items) {
-            if (item.get(latLongColumn) != null && item.get(latLongColumn).getS() != null) {
-                String latLongStr = item.get(latLongColumn).getS();
-                String[] latLong = latLongStr.split(",");
-                if (latLong.length == 2) {
-                    S2LatLng latLng = S2LatLng.fromDegrees(Double.valueOf(latLong[0]), Double.valueOf(latLong[1]));
-                    if (centerLatLng != null && radiusInMeter > 0
-                            && centerLatLng.getEarthDistance(latLng) <= radiusInMeter) {
-                        result.add(item);
-                    }
+            if ((item.get(LATITUDE_FIELD) != null) && (item.get(LATITUDE_FIELD).getN() != null)
+                    && (item.get(LONGITUDE_FIELD) != null) && (item.get(LONGITUDE_FIELD).getN() != null)) {
+                S2LatLng latLng = S2LatLng.fromDegrees(Double.valueOf(item.get(LATITUDE_FIELD).getN()), Double.valueOf(
+                        item.get(LONGITUDE_FIELD).getN()));
+                if (centerLatLng != null && radiusInMeter > 0
+                        && centerLatLng.getEarthDistance(latLng) <= radiusInMeter) {
+                    result.add(item);
                 }
             }
         }

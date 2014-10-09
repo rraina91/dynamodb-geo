@@ -18,22 +18,12 @@ public class RectangleGeoFilter implements GeoFilter {
      */
     private final S2LatLngRect latLngRect;
 
-    /**
-     * Column containing the item's lat/long as a string - used for reverse lookup.
-     */
-    private final String latLongColumn;
-
-    public RectangleGeoFilter(S2LatLngRect latLngRect, String latLongColumn) {
+    public RectangleGeoFilter(S2LatLngRect latLngRect) {
         this.latLngRect = latLngRect;
-        this.latLongColumn = latLongColumn;
     }
 
     public S2LatLngRect getLatLngRect() {
         return latLngRect;
-    }
-
-    public String getLatLongColumn() {
-        return latLongColumn;
     }
 
     /**
@@ -45,14 +35,11 @@ public class RectangleGeoFilter implements GeoFilter {
     public List<Map<String, AttributeValue>> filter(List<Map<String, AttributeValue>> items) {
         List<Map<String, AttributeValue>> result = new ArrayList<Map<String, AttributeValue>>();
         for (Map<String, AttributeValue> item : items) {
-            if (item.get(latLongColumn) != null && item.get(latLongColumn).getS() != null) {
-                String latLongStr = item.get(latLongColumn).getS();
-                String[] latLong = latLongStr.split(",");
-                if (latLong.length == 2) {
-                    S2LatLng latLng = S2LatLng.fromDegrees(Double.valueOf(latLong[0]), Double.valueOf(latLong[1]));
-                    if (latLngRect != null && latLngRect.contains(latLng)) {
-                        result.add(item);
-                    }
+            if ((item.get(LATITUDE_FIELD) != null) && (item.get(LATITUDE_FIELD).getN() != null)
+                    && (item.get(LONGITUDE_FIELD) != null) && (item.get(LONGITUDE_FIELD).getN() != null)) {
+                S2LatLng latLng = S2LatLng.fromDegrees(Double.valueOf(item.get(LATITUDE_FIELD).getN()), Double.valueOf(item.get(LONGITUDE_FIELD).getN()));
+                if (latLngRect != null && latLngRect.contains(latLng)) {
+                    result.add(item);
                 }
 
             }

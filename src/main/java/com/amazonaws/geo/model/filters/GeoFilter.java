@@ -12,6 +12,13 @@ import java.util.Map;
 public interface GeoFilter {
 
     /**
+     * Fields required for Geo querying
+     */
+     static final String LATITUDE_FIELD = "latitude";
+
+     static final String LONGITUDE_FIELD = "longitude";
+
+    /**
      * Filters out entities from the given list of <code>items</code>
      * @param items a list of items that need to be filtered
      * @return filteredItems a list containing only the remaining items that did not get filtered.
