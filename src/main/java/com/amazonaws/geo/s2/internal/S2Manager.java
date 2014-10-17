@@ -130,8 +130,7 @@ public class S2Manager {
 
 		String geohashString = String.valueOf(geohash);
 		long denominator = (long) Math.pow(10, geohashString.length() - hashKeyLength);
-        if (denominator == 0) { //  can happen if geohashString.length() < geohash
-            LOG.warn("Returning the geohash [{}] as the geoHashKey, since the hashKeyLength [{}] is greater than the length of the geohash", geohash, hashKeyLength);
+        if (denominator == 0) { //  can happen if geohashString.length() < geohash. Querying with a lat/lng of 0.0 can create this situation.
             return geohash;
         }
         return geohash / denominator;
