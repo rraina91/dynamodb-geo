@@ -43,6 +43,20 @@ public class Geo {
      * @return the decorated request
      */
     public PutItemRequest putItemRequest(PutItemRequest putItemRequest, double latitude, double longitude, List<GeoConfig> configs) {
+        updateAttributeValues(putItemRequest.getItem(), latitude, longitude, configs);
+        return putItemRequest;
+    }
+
+    /**
+     * Decorates the given <code>updateItemRequest</code> with attributes required for geo spatial querying.
+     *
+     * @param attributeValueMap the items that needs to be decorated with geo attributes
+     * @param latitude          the latitude that needs to be attached with the item
+     * @param longitude         the longitude that needs to be attached with the item
+     * @param configs           the collection of configurations to be used for decorating the request with geo attributes
+     */
+    public void updateAttributeValues(Map<String, AttributeValue> attributeValueMap, double latitude, double longitude,
+                                                   List<GeoConfig> configs) {
         if (configs == null) {
             throw new IllegalArgumentException("Geo configs should not be null");
         }
@@ -56,11 +70,11 @@ public class Geo {
 
             //Decorate the request with the geohash
             AttributeValue geoHashValue = new AttributeValue().withN(Long.toString(geohash));
-            putItemRequest.getItem().put(config.getGeoHashColumn(), geoHashValue);
+            attributeValueMap.put(config.getGeoHashColumn(), geoHashValue);
 
             AttributeValue geoHashKeyValue;
             if (config.getHashKeyDecorator().isPresent() && config.getCompositeHashKeyColumn().isPresent()) {
-                AttributeValue compositeHashKeyValue = putItemRequest.getItem().get(config.getCompositeHashKeyColumn().get());
+                AttributeValue compositeHashKeyValue = attributeValueMap.get(config.getCompositeHashKeyColumn().get());
                 if (compositeHashKeyValue == null) {
                     continue;
                 }
@@ -72,9 +86,8 @@ public class Geo {
                 //Decorate the request with the geoHashKey (type Number)
                 geoHashKeyValue = new AttributeValue().withN(String.valueOf(geoHashKey));
             }
-            putItemRequest.getItem().put(config.getGeoHashKeyColumn(), geoHashKeyValue);
+            attributeValueMap.put(config.getGeoHashKeyColumn(), geoHashKeyValue);
         }
-        return putItemRequest;
     }
 
     /**
