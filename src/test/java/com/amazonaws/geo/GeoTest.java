@@ -273,7 +273,6 @@ public class GeoTest {
         String geoIndexName = "VenueGeoIndex";
         String geoHashKeyColumn = "geoHashKey";
         String geoHashColumn = "geohash";
-        String latLongColumn = "latLong";
 
         GeoConfig.Builder builder = new GeoConfig.Builder().geoIndexName(geoIndexName).geoHashKeyLength(hashKeyLength)
                 .geoHashKeyColumn(geoHashKeyColumn).geoHashColumn(geoHashColumn);
