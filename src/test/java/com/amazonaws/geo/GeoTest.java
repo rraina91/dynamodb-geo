@@ -121,7 +121,7 @@ public class GeoTest {
     public void getItemQueryInvalidFields() {
         Geo geo = new Geo();
         try {
-            geo.getItemQuery(new QueryRequest(), 0.0, 0.0, null, null, null, 0, null, Optional.<String>absent());
+            geo.getItemQuery(new QueryRequest(), 0.0, 0.0, null, null, null, 0, Optional.<String>absent());
             fail("Should have failed as there are invalid fields");
         } catch (IllegalArgumentException e) {
             //expected
@@ -193,7 +193,7 @@ public class GeoTest {
     public void radiusQueryInvalidRadius() {
         Geo geo = new Geo();
         try {
-            geo.radiusQuery(new QueryRequest(), 0.0, 0.0, -5.0, null, null, null, 0, null, Optional.<String>absent());
+            geo.radiusQuery(new QueryRequest(), 0.0, 0.0, -5.0, null, null, null, 0, Optional.<String>absent());
             fail("Should have failed as there are invalid fields");
         } catch (IllegalArgumentException e) {
             //expected
@@ -233,7 +233,7 @@ public class GeoTest {
     public void rectangleQueryInvalidFields() {
         Geo geo = new Geo();
         try {
-            geo.rectangleQuery(new QueryRequest(), 0.0, 0.0, 0.0, 0.0, null, null, null, 0, null, Optional.<String>absent());
+            geo.rectangleQuery(new QueryRequest(), 0.0, 0.0, 0.0, 0.0, null, null, null, 0, Optional.<String>absent());
             fail("Should have failed as there are invalid fields");
         } catch (IllegalArgumentException e) {
             //expected
@@ -275,7 +275,7 @@ public class GeoTest {
         String geoHashColumn = "geohash";
         String latLongColumn = "latLong";
 
-        GeoConfig.Builder builder = new GeoConfig.Builder().latLongColumn(latLongColumn).geoIndexName(geoIndexName).geoHashKeyLength(hashKeyLength)
+        GeoConfig.Builder builder = new GeoConfig.Builder().geoIndexName(geoIndexName).geoHashKeyLength(hashKeyLength)
                 .geoHashKeyColumn(geoHashKeyColumn).geoHashColumn(geoHashColumn);
         if(withKeyDecorator) {
             HashKeyDecorator decorator = new DefaultHashKeyDecorator();

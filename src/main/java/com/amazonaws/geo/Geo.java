@@ -143,18 +143,16 @@ public class Geo {
      * @param geoHashKeyColumn name of the column that stores the item's geoHashKey. This column is used as a hash key of the global secondary index
      * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
      * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
-     * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
      * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
      *                          This is needed when constructing queries that need a composite hash key.
      *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the decorated request
      */
     public QueryRequest getItemQuery(QueryRequest queryRequest, double latitude, double longitude, String geoIndexName,
-                                     String geoHashKeyColumn,
-                                     String geoHashColumn,
-                                     int geoHashKeyLength, String latLongColumn, Optional<String> compositeKeyValue) {
+                                     String geoHashKeyColumn, String geoHashColumn,
+                                     int geoHashKeyLength, Optional<String> compositeKeyValue) {
         GeoConfig config = new GeoConfig.Builder().geoHashColumn(geoHashColumn).geoHashKeyColumn(geoHashKeyColumn).geoHashKeyLength(
-                geoHashKeyLength).geoIndexName(geoIndexName).latLongColumn(latLongColumn).build();
+                geoHashKeyLength).geoIndexName(geoIndexName).build();
         return getItemQuery(queryRequest, latitude, longitude, config, compositeKeyValue);
     }
 
@@ -200,18 +198,16 @@ public class Geo {
      * @param geoHashKeyColumn name of the column that stores the item's geoHashKey. This column is used as a hash key of the global secondary index
      * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
      * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
-     * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
      * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
      *                          This is needed when constructing queries that need a composite hash key.
      *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the wrapper containing the generated queries and the geo filter
      */
     public GeoQueryRequest radiusQuery(QueryRequest queryRequest, double latitude, double longitude, double radius, String geoIndexName,
-                                       String geoHashKeyColumn,
-                                       String geoHashColumn,
-                                       int geoHashKeyLength, String latLongColumn, Optional<String> compositeKeyValue) {
+                                       String geoHashKeyColumn, String geoHashColumn,
+                                       int geoHashKeyLength, Optional<String> compositeKeyValue) {
         GeoConfig config = new GeoConfig.Builder().geoHashColumn(geoHashColumn).geoHashKeyColumn(geoHashKeyColumn).geoHashKeyLength(
-                geoHashKeyLength).geoIndexName(geoIndexName).latLongColumn(latLongColumn).build();
+                geoHashKeyLength).geoIndexName(geoIndexName).build();
         return radiusQuery(queryRequest, latitude, longitude, radius, config, compositeKeyValue);
     }
 
@@ -258,19 +254,16 @@ public class Geo {
      * @param geoHashKeyColumn name of the column that stores the item's geoHashKey. This column is used as a hash key of the global secondary index
      * @param geoHashColumn    name of the column that stores the item's geohash. This column is used as a range key in the global secondary index
      * @param geoHashKeyLength the length of the geohashKey. GeoHashKey is a substring of the item's geohash
-     * @param latLongColumn    name of the column that stores the item's lat/long as a string representation.
      * @param compositeKeyValue the value of the column that is used in the construction of the composite hash key(geoHashKey + someOtherColumnValue).
      *                          This is needed when constructing queries that need a composite hash key.
      *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the wrapper containing the generated queries and the geo filter
      */
     public GeoQueryRequest rectangleQuery(QueryRequest queryRequest, double minLatitude, double minLongitude, double maxLatitude,
-                                          double maxLongitude, String geoIndexName,
-                                          String geoHashKeyColumn,
-                                          String geoHashColumn,
-                                          int geoHashKeyLength, String latLongColumn, Optional<String> compositeKeyValue) {
+                                          double maxLongitude, String geoIndexName, String geoHashKeyColumn,
+                                          String geoHashColumn, int geoHashKeyLength, Optional<String> compositeKeyValue) {
         GeoConfig config = new GeoConfig.Builder().geoHashColumn(geoHashColumn).geoHashKeyColumn(geoHashKeyColumn).geoHashKeyLength(
-                geoHashKeyLength).geoIndexName(geoIndexName).latLongColumn(latLongColumn).build();
+                geoHashKeyLength).geoIndexName(geoIndexName).build();
         return rectangleQuery(queryRequest, minLatitude, minLongitude, maxLatitude, maxLongitude, config, compositeKeyValue);
     }
 

@@ -48,6 +48,118 @@ Geo query methods will return several queries. Depending on your configuration, 
 ###Dataset density limitation
 The Geohash used in this library is roughly centimeter precision. Therefore, the library is not suitable if your dataset has much higher density.
 
+## Choosing geohash length based on km/m
+* http://www.metablake.com/foursquare/wsdm2013-final.pdf - shows S2 lib has 31 levels, giving <1cm^2 at level 31
+* http://karussell.wordpress.com/2012/05/23/spatial-keys-memory-efficient-geohashes/ - shows the math to compute for your sphere diameter - diameter / 2^number_levels
+* http://unterbahn.com/2009/11/metric-dimensions-of-geohash-partitions-at-the-equator/ - describes how this varies depending upon latitude
+* http://ravendb.net/docs/2.0/client-api/querying/static-indexes/spatial-search - gives a great breakdown from 1 - 30
+* http://www.easysurf.cc/circle.htm#cetol1 - calculate earth circumference at given latitude
+
+So, given above, here are some common geohash levels (base 0) mapped to distances:
+
+Level | dyanmodb-geohash length | Distance
+--- | --- | ---
+19 | 12-13 | ~38m at equator (or **~15m** at nyc latitude)
+15 | 10 | ~611m at equator (or **~230m** at nyc latitude)
+9 | 6 |~39km at equator (or **~15km** at nyc latitude)
+6 | 4 | ~313km at equator (or **~118km** at nyc latitude)
+
+## Geo querying analysis
+
+#### New strategy - 10 threads, hashkey length = 5, 20m query followed by 50 m.
+Lat/long|Time taken(s) in Dynamo| Time taken(s) in Mongo 
+---|---|---|
+40.727526, -73.9944511|0.174|0.054
+38.114560, -117.270763|0.258|0.053
+
+### HashKey length - 6:
+
+Radius(miles) | Number of queries fired 
+---|---|
+600|30-->23281
+500|9-->19136
+50|53-->155
+40|31-->105
+30|10-->66
+20|1-->57
+10|6-->10
+1m|1-->1
+
+### HashKey length - 5:
+
+Radius(miles) | Number of queries fired | Time taken(s) | Time taken(s) w/10 threads 
+---|---|---|---|
+600|30-->2356
+500|9-->1921
+50|53-->63|1.89|0.37
+40|31-->39|1.134|0.32
+30|10-->16|0.67|0.25
+20|1-->7|0.43|0.19
+10|6-->6|0.27|0.13
+1m|1-->1
+
+### HashKey length - 4:
+
+Radius(miles) | Number of queries fired 
+---|---|
+600|30-->262
+500|9-->200
+50|53-->55
+40|31-->33
+30|10-->11
+20|1-->2
+10|6-->6
+1m|1-->1
+
+### HashKey length - 3:
+
+Radius(miles) | Number of queries fired 
+---|---|
+600|30-->53
+500|9-->26
+50|53-->54
+40|31-->32
+30|10-->11
+20|1-->2
+10|6-->6
+1m|1-->1
+
+### HashKey length - 2:
+
+Radius(miles) | Number of queries fired 
+---|---|
+600|30-->32
+500|9-->10
+50|53-->53
+40|31-->31
+30|10-->10
+20|1-->1
+10|6-->6
+1m|1-->1
+
+### HashKey length - 1:
+
+Radius(miles) | Number of queries fired 
+---|---|
+500|9-->9
+50|53-->53
+40|31-->31
+30|10-->10
+20|1-->1
+10|6-->6
+1m|1-->1
+
+Number of tries to find zip codes (base radius of 10 miles) with hashKey length of 5:
+* NYC 40.727526, -73.9944511 : 1
+* Haskell County(Texas) 33.215714, -99.814544 : 1
+* Torrence County (New Mexico) 34.479959, -105.641418 : 2
+* Augusta (Arkansas) 35.292151, -91.260314 : 1
+* Tonopah (Nevada)** 38.114560, -117.270763 : 4
+* Gypsum(CO)** 39.814929, -106.393789 : 1
+
+** For Tonopah, all levels generated 26 queries!
+** For Gypsum(CO)**, 10 miles generated 16 queries, 20 miles generated 30, 30 miles generated 45.
+
 ##Reference
 
 ###Amazon DynamoDB

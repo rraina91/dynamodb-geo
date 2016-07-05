@@ -81,7 +81,6 @@ public class GeoConfig {
         private String geoHashKeyColumn;
         private String geoHashColumn;
         private int geoHashKeyLength;
-        private String latLongColumn;
         private Optional<HashKeyDecorator> hashKeyDecorator;
         private Optional<String> compositeHashKeyColumn;
 
@@ -106,11 +105,6 @@ public class GeoConfig {
 
         public Builder geoHashKeyLength(int geoHashKeyLength) {
             this.geoHashKeyLength = geoHashKeyLength;
-            return this;
-        }
-
-        public Builder latLongColumn(String latLongColumn) {
-            this.latLongColumn = latLongColumn;
             return this;
         }
 
