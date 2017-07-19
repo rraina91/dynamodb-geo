@@ -1,4 +1,4 @@
-package com.amazonaws.geo;
+package com.dashlabs.dash.geo;
 
 import com.google.common.base.Optional;
 

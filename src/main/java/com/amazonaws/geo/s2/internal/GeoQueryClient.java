@@ -1,12 +1,11 @@
 package com.amazonaws.geo.s2.internal;
 
 import com.amazonaws.geo.model.GeoQueryRequest;
-import com.amazonaws.geo.model.filters.GeoFilter;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
+import com.dashlabs.dash.geo.model.filters.GeoFilter;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
- * Created by mpuri on 3/28/14.
+ * Created by mpuri on 3/28/14
  */
 public class GeoQueryClient {
 
@@ -70,7 +69,7 @@ public class GeoQueryClient {
      * @param queryRequest the query to execute
      * @return a collection of filtered result items
      */
-    private List<Map<String, AttributeValue>> executeQuery(QueryRequest queryRequest, GeoFilter resultFilter) {
+    private List<Map<String, AttributeValue>> executeQuery(QueryRequest queryRequest, GeoFilter<Map<String, AttributeValue>> resultFilter) {
         QueryResult queryResult;
         List<Map<String, AttributeValue>> resultItems = new ArrayList<Map<String, AttributeValue>>();
         do {

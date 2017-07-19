@@ -1,9 +1,10 @@
 package com.amazonaws.geo;
 
 import com.amazonaws.geo.model.*;
-import com.amazonaws.geo.model.filters.GeoFilter;
 import com.amazonaws.geo.model.filters.GeoFilters;
-import com.amazonaws.geo.s2.internal.S2Manager;
+import com.dashlabs.dash.geo.GeoConfig;
+import com.dashlabs.dash.geo.model.filters.GeoFilter;
+import com.dashlabs.dash.geo.s2.internal.S2Manager;
 import com.amazonaws.services.dynamodbv2.model.*;
 import com.google.common.base.Optional;
 import com.google.common.geometry.S2LatLng;
@@ -21,6 +22,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class Geo {
 
     private final S2Manager s2Manager;
+
     private final GeoQueryHelper geoQueryHelper;
 
     public Geo() {
@@ -158,7 +160,7 @@ public class Geo {
 
     /**
      * Creates a wrapper that contains a collection of all queries that are generated as a result of the radius query.
-     * It also contains a filter {@link com.amazonaws.geo.model.filters.GeoFilter} that needs to be applied to the results of the query
+     * It also contains a filter {@link com.dashlabs.dash.geo.model.filters.GeoFilter} that needs to be applied to the results of the query
      * to ensure that everything is in the radius.
      * This is needed because queries are fired for every cell that intersects with the radius' rectangle box.
      *
@@ -177,7 +179,7 @@ public class Geo {
         checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength());
         //Center latLong is needed for the radius filter
         S2LatLng centerLatLng = S2LatLng.fromDegrees(latitude, longitude);
-        GeoFilter filter = GeoFilters.newRadiusFilter(centerLatLng, radius);
+        GeoFilter<Map<String, AttributeValue>> filter = GeoFilters.newRadiusFilter(centerLatLng, radius);
         //Bounding box is needed to generate queries for each cell that intersects with the bounding box
         S2LatLngRect boundingBox = s2Manager.getBoundingBoxForRadiusQuery(latitude, longitude, radius);
         List<QueryRequest> geoQueries = geoQueryHelper.generateGeoQueries(queryRequest, boundingBox, config, compositeKeyValue);
@@ -186,7 +188,7 @@ public class Geo {
 
     /**
      * Creates a wrapper that contains a collection of all queries that are generated as a result of the radius query.
-     * It also contains a filter {@link com.amazonaws.geo.model.filters.GeoFilter} that needs to be applied to the results of the query
+     * It also contains a filter {@link com.dashlabs.dash.geo.model.filters.GeoFilter} that needs to be applied to the results of the query
      * to ensure that everything is in the radius.
      * This is needed because queries are fired for every cell that intersects with the radius' rectangle box.
      *
@@ -213,7 +215,7 @@ public class Geo {
 
     /**
      * Creates a wrapper that contains a collection of all queries that are generated as a result of this rectangle query.
-     * It also contains a filter {@link com.amazonaws.geo.model.filters.GeoFilter} that needs to be applied to the results of the query
+     * It also contains a filter {@link com.dashlabs.dash.geo.model.filters.GeoFilter} that needs to be applied to the results of the query
      * to ensure that everything is in the bounding box of the queried rectangle.
      * This is needed because queries are fired for every cell that intersects with the rectangle's bounding box.
      *
@@ -234,14 +236,14 @@ public class Geo {
         // bounding box is needed for the filter and to generate the queries
         // for each cell that intersects with the bounding box
         S2LatLngRect boundingBox = s2Manager.getBoundingBoxForRectangleQuery(minLatitude, minLongitude, maxLatitude, maxLongitude);
-        GeoFilter filter = GeoFilters.newRectangleFilter(boundingBox);
+        GeoFilter<Map<String, AttributeValue>> filter = GeoFilters.newRectangleFilter(boundingBox);
         List<QueryRequest> geoQueries = geoQueryHelper.generateGeoQueries(queryRequest, boundingBox, config, compositeKeyValue);
         return new GeoQueryRequest(geoQueries, filter);
     }
 
     /**
      * Creates a wrapper that contains a collection of all queries that are generated as a result of this rectangle query.
-     * It also contains a filter {@link com.amazonaws.geo.model.filters.GeoFilter} that needs to be applied to the results of the query
+     * It also contains a filter {@link com.dashlabs.dash.geo.model.filters.GeoFilter} that needs to be applied to the results of the query
      * to ensure that everything is in the bounding box of the queried rectangle.
      * This is needed because queries are fired for every cell that intersects with the rectangle's bounding box.
      *

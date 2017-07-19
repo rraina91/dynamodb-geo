@@ -1,27 +1,33 @@
-package com.amazonaws.geo.model.filters;
-
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+package com.dashlabs.dash.geo.model.filters;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * Created by mpuri on 3/26/14.
+ *
+ * Created originally by mpuri on 3/26/14.
  * Represents a filter that can be applied to a collection of items and return a subset of those items.
+ *
+ * User: blangel
+ * Date: 7/19/17
+ * Time: 2:09 PM
+ *
+ * Modified original to abstract the data type
  */
-public interface GeoFilter {
+public interface GeoFilter<T> {
 
     /**
      * Fields required for Geo querying
      */
-     static final String LATITUDE_FIELD = "latitude";
+    static final String LATITUDE_FIELD = "latitude";
 
-     static final String LONGITUDE_FIELD = "longitude";
+    static final String LONGITUDE_FIELD = "longitude";
 
     /**
      * Filters out entities from the given list of <code>items</code>
+     *
      * @param items a list of items that need to be filtered
      * @return filteredItems a list containing only the remaining items that did not get filtered.
      */
-    List<Map<String, AttributeValue>> filter(List<Map<String, AttributeValue>> items);
+    List<T> filter(List<T> items);
+
 }

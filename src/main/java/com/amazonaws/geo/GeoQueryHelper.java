@@ -1,7 +1,8 @@
 package com.amazonaws.geo;
 
-import com.amazonaws.geo.model.GeohashRange;
-import com.amazonaws.geo.s2.internal.S2Manager;
+import com.dashlabs.dash.geo.GeoConfig;
+import com.dashlabs.dash.geo.model.GeohashRange;
+import com.dashlabs.dash.geo.s2.internal.S2Manager;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by mpuri on 3/25/14.
+ * Created by mpuri on 3/25/14
  */
 public class GeoQueryHelper {
 

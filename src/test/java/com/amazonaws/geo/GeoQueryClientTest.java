@@ -1,12 +1,12 @@
 package com.amazonaws.geo;
 
-import com.amazonaws.geo.model.filters.GeoFilter;
 import com.amazonaws.geo.model.GeoQueryRequest;
 import com.amazonaws.geo.s2.internal.GeoQueryClient;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.dashlabs.dash.geo.model.filters.GeoFilter;
 import org.junit.Test;
 
 import java.util.*;
@@ -21,14 +21,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Created by mpuri on 3/26/14.
+ * Created by mpuri on 3/26/14
  */
 public class GeoQueryClientTest {
 
-    @Test
+    @Test @SuppressWarnings("unchecked")
     public void execute() {
         AmazonDynamoDBClient dbClient = mock(AmazonDynamoDBClient.class);
-        GeoFilter geoFilter = mock(GeoFilter.class);
+        GeoFilter<Map<String, AttributeValue>> geoFilter = mock(GeoFilter.class);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         GeoQueryClient geoQueryClient = new GeoQueryClient(dbClient,executorService);
 
@@ -79,11 +79,9 @@ public class GeoQueryClientTest {
             List<Map<String, AttributeValue>> results = geoQueryClient.execute(geoQueryRequest);
             assertNotNull(results);
             assertEquals(results.size(), 3);
-        } catch(InterruptedException ie){
+        } catch (InterruptedException | ExecutionException ie) {
             fail("error occurred while executing the queries");
-        } catch(ExecutionException ee){
-            fail("error occurred while executing the queries");
-        }finally{
+        } finally {
             executorService.shutdown();
         }
     }

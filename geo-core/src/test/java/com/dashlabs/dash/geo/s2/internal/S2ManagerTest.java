@@ -1,13 +1,12 @@
-package com.amazonaws.geo;
+package com.dashlabs.dash.geo.s2.internal;
 
-import com.amazonaws.geo.s2.internal.S2Manager;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 
 /**
- * Created by mpuri on 6/2/14.
+ * Created by mpuri on 6/2/14
  */
 public class S2ManagerTest {
 

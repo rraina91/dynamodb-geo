@@ -1,10 +1,11 @@
 package com.amazonaws.geo;
 
 import com.amazonaws.geo.model.GeoQueryRequest;
-import com.amazonaws.geo.model.filters.RadiusGeoFilter;
-import com.amazonaws.geo.model.filters.RectangleGeoFilter;
-import com.amazonaws.geo.s2.internal.S2Manager;
 import com.amazonaws.services.dynamodbv2.model.*;
+import com.dashlabs.dash.geo.DefaultHashKeyDecorator;
+import com.dashlabs.dash.geo.GeoConfig;
+import com.dashlabs.dash.geo.HashKeyDecorator;
+import com.dashlabs.dash.geo.s2.internal.S2Manager;
 import com.google.common.base.Optional;
 import com.google.common.geometry.S2LatLng;
 import com.google.common.geometry.S2LatLngRect;
@@ -19,7 +20,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Created by mpuri on 3/26/14.
+ * Created by mpuri on 3/26/14
  */
 public class GeoTest {
 
@@ -220,8 +221,6 @@ public class GeoTest {
         GeoQueryRequest geoQueryRequest = geo.radiusQuery(query, lat, longitude, radius, config, Optional.of(category));
         assertNotNull(geoQueryRequest);
         assertNotNull(geoQueryRequest.getResultFilter());
-        assertNotNull(((RadiusGeoFilter) geoQueryRequest.getResultFilter()).getCenterLatLng());
-        assertNotNull(((RadiusGeoFilter) geoQueryRequest.getResultFilter()).getRadiusInMeter());
         assertNotNull(geoQueryRequest.getQueryRequests());
         assertEquals(geoQueryRequest.getQueryRequests(), geoQueries);
         verify(s2Manager, times(1)).getBoundingBoxForRadiusQuery(lat, longitude, radius);
@@ -260,7 +259,6 @@ public class GeoTest {
         GeoQueryRequest geoQueryRequest = geo.rectangleQuery(query, minLat, minLongitude, maxLat, maxLongitude, config, Optional.<String>absent());
         assertNotNull(geoQueryRequest);
         assertNotNull(geoQueryRequest.getResultFilter());
-        assertNotNull(((RectangleGeoFilter) geoQueryRequest.getResultFilter()).getLatLngRect());
         assertNotNull(geoQueryRequest.getQueryRequests());
         assertEquals(geoQueryRequest.getQueryRequests(), geoQueries);
         verify(s2Manager, times(1)).getBoundingBoxForRectangleQuery(minLat, minLongitude, maxLat, maxLongitude);
