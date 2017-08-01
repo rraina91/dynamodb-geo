@@ -1,5 +1,6 @@
 package com.dashlabs.dash.geo.model.filters;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -28,6 +29,6 @@ public interface GeoFilter<T> {
      * @param items a list of items that need to be filtered
      * @return filteredItems a list containing only the remaining items that did not get filtered.
      */
-    List<T> filter(List<T> items);
+    List<T> filter(Collection<T> items);
 
 }

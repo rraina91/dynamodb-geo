@@ -3,6 +3,7 @@ package com.dashlabs.dash.geo.model.filters;
 import com.google.common.geometry.S2LatLng;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,7 +46,7 @@ public class RadiusGeoFilter<T> implements GeoFilter<T> {
      * @param items items that need to be filtered.
      * @return result a collection of items that fall within the radius of this filter.
      */
-    public List<T> filter(List<T> items) {
+    public List<T> filter(Collection<T> items) {
         List<T> result = new ArrayList<>(items.size());
         for (T item : items) {
             Optional<Double> latitude = extractor.extractLatitude(item);

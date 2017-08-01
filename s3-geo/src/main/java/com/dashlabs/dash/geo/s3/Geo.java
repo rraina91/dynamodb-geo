@@ -7,6 +7,7 @@ import com.dashlabs.dash.geo.s3.model.filters.GeoFilters;
 import com.google.common.geometry.S2LatLng;
 import com.google.common.geometry.S2LatLngRect;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -50,13 +51,13 @@ public class Geo {
         return helper.generateGeoProperties(boundingBox, geoHashLength);
     }
 
-    public List<GeoProperties> filterByRadius(List<GeoProperties> properties, double latitude, double longitude, double radius) {
+    public List<GeoProperties> filterByRadius(Collection<GeoProperties> properties, double latitude, double longitude, double radius) {
         S2LatLng centerLatLng = S2LatLng.fromDegrees(latitude, longitude);
         GeoFilter<GeoProperties> filter = GeoFilters.newRadiusFilter(centerLatLng, radius);
         return filter.filter(properties);
     }
 
-    public List<GeoProperties> filterByRectangle(List<GeoProperties> properties, double minLatitude, double minLongitude,
+    public List<GeoProperties> filterByRectangle(Collection<GeoProperties> properties, double minLatitude, double minLongitude,
                                                  double maxLatitude, double maxLongitude) {
         S2LatLngRect boundingBox = s2Manager.getBoundingBoxForRectangleQuery(minLatitude, minLongitude, maxLatitude, maxLongitude);
         GeoFilter<GeoProperties> filter = GeoFilters.newRectangleFilter(boundingBox);
