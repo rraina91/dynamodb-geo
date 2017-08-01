@@ -2,9 +2,6 @@ package com.amazonaws.geo;
 
 import com.amazonaws.geo.model.GeoQueryRequest;
 import com.amazonaws.services.dynamodbv2.model.*;
-import com.dashlabs.dash.geo.DefaultHashKeyDecorator;
-import com.dashlabs.dash.geo.GeoConfig;
-import com.dashlabs.dash.geo.HashKeyDecorator;
 import com.dashlabs.dash.geo.s2.internal.S2Manager;
 import com.google.common.base.Optional;
 import com.google.common.geometry.S2LatLng;

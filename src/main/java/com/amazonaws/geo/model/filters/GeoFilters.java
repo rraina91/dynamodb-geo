@@ -41,7 +41,7 @@ public class GeoFilters {
      * @return a new instance of the {@link RadiusGeoFilter}
      */
     public static GeoFilter<Map<String, AttributeValue>> newRadiusFilter(S2LatLng centerLatLng, double radiusInMeter) {
-        return new RadiusGeoFilter<>(EXTRACTOR, centerLatLng, radiusInMeter);
+        return com.dashlabs.dash.geo.model.filters.GeoFilters.newRadiusFilter(EXTRACTOR, centerLatLng, radiusInMeter);
     }
 
     /**
@@ -51,7 +51,7 @@ public class GeoFilters {
      * @return a new instance of the {@link RectangleGeoFilter}
      */
     public static GeoFilter<Map<String, AttributeValue>> newRectangleFilter(S2LatLngRect latLngRect) {
-        return new RectangleGeoFilter<>(EXTRACTOR, latLngRect);
+        return com.dashlabs.dash.geo.model.filters.GeoFilters.newRectangleFilter(EXTRACTOR, latLngRect);
     }
 
 }

@@ -1,4 +1,4 @@
-package com.dashlabs.dash.geo;
+package com.amazonaws.geo;
 
 /**
  * Created by mpuri on 4/14/14

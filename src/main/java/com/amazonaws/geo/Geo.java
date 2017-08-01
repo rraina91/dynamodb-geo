@@ -2,7 +2,6 @@ package com.amazonaws.geo;
 
 import com.amazonaws.geo.model.*;
 import com.amazonaws.geo.model.filters.GeoFilters;
-import com.dashlabs.dash.geo.GeoConfig;
 import com.dashlabs.dash.geo.model.filters.GeoFilter;
 import com.dashlabs.dash.geo.s2.internal.S2Manager;
 import com.amazonaws.services.dynamodbv2.model.*;
