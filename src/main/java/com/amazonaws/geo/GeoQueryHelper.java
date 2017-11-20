@@ -18,6 +18,9 @@ import java.util.Map;
 
 /**
  * Created by mpuri on 3/25/14
+ * 
+ * Corkhounds.com altered this class to add copy over the FilterExpression and 
+ * Expression Attributes as necessary when building a QueryRequest. 
  */
 public class GeoQueryHelper extends AbstractGeoQueryHelper {
 
@@ -96,7 +99,10 @@ public class GeoQueryHelper extends AbstractGeoQueryHelper {
                 .withScanIndexForward(queryRequest.getScanIndexForward())
                 .withSelect(queryRequest.getSelect())
                 .withAttributesToGet(queryRequest.getAttributesToGet())
-                .withTableName(queryRequest.getTableName());
+                .withTableName(queryRequest.getTableName())
+                .withFilterExpression(queryRequest.getFilterExpression())
+                .withExpressionAttributeNames(queryRequest.getExpressionAttributeNames())
+                .withExpressionAttributeValues(queryRequest.getExpressionAttributeValues());
 
         return copiedQueryRequest;
     }
