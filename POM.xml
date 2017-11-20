@@ -36,6 +36,11 @@
         	<artifactId>jcl-over-slf4j</artifactId>   
         	<version>1.7.21</version> 	
     	</dependency>
+	<dependency>
+    		<groupId>org.isuper</groupId>
+    		<artifactId>s2-geometry-library-java</artifactId>
+    		<version>0.0.1</version>
+	</dependency>
   </dependencies>
   
         <distributionManagement>
