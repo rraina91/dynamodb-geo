@@ -15,7 +15,6 @@
 			<artifactId>aws-java-sdk-dynamodb</artifactId>
 	    	<version>1.11.150</version>
 	   </dependency>
-		<!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
 		<dependency>
 		    <groupId>com.google.guava</groupId>
 		    <artifactId>guava</artifactId>
@@ -36,26 +35,23 @@
         	<artifactId>jcl-over-slf4j</artifactId>   
         	<version>1.7.21</version> 	
     	</dependency>
-	<dependency>
-    		<groupId>org.isuper</groupId>
-    		<artifactId>s2-geometry-library-java</artifactId>
-    		<version>0.0.1</version>
-	</dependency>
+		<dependency>
+		    <groupId>io.sgr</groupId>
+		    <artifactId>s2-geometry-library-java</artifactId>
+		    <version>1.0.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>junit</groupId>
+		    <artifactId>junit</artifactId>
+		    <version>4.12</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.mockito</groupId>
+		    <artifactId>mockito-all</artifactId>
+		    <version>1.10.19</version>
+		</dependency>
   </dependencies>
   
-        <distributionManagement>
-        <repository>
-            <id>maven-s3-release-repo</id>
-            <name>AWS Release Repository</name>
-            <url>s3://repository.corkhounds.com/releases</url>
-        </repository>
-        <snapshotRepository>
-            <id>maven-s3-snapshot-repo</id>
-            <name>AWS Snapshot Repository</name>
-            <url>s3://repository.corkhounds.com/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
-
 	<build>
 	    <extensions>
             <extension>
