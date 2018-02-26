@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/CorkHounds/dynamodb-geo.svg?branch=master)](https://travis-ci.org/CorkHounds/dynamodb-geo)
+
 #Geo Library for Amazon DynamoDB
 
 This library was forked from the [AWS geo library][geo-library-javadoc].
