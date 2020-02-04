@@ -3,10 +3,10 @@ package com.amazonaws.geo;
 import com.dashlabs.dash.geo.AbstractGeoQueryHelper;
 import com.dashlabs.dash.geo.model.GeohashRange;
 import com.dashlabs.dash.geo.s2.internal.S2Manager;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.geometry.S2LatLngRect;
@@ -48,7 +48,7 @@ public class GeoQueryHelper extends AbstractGeoQueryHelper {
             List<GeohashRange> geohashRanges = outerRange.trySplit(config.getGeoHashKeyLength(), s2Manager);
             for (GeohashRange range : geohashRanges) {
                 //Make a copy of the query request to retain original query attributes like table name, etc.
-                QueryRequest queryRequest = copyQueryRequest(query);
+                QueryRequest.Builder queryRequest = copyQueryRequest(query).toBuilder();
 
                 //generate the hash key for the global secondary index
                 long geohashKey = s2Manager.generateHashKey(range.getRangeMin(), config.getGeoHashKeyLength());
@@ -58,25 +58,25 @@ public class GeoQueryHelper extends AbstractGeoQueryHelper {
                 Condition geoHashKeyCondition;
                 if (config.getHashKeyDecorator().isPresent() && compositeKeyValue.isPresent()) {
                     String compositeHashKey = config.getHashKeyDecorator().get().decorate(compositeKeyValue.get(), geohashKey);
-                    geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                            .withAttributeValueList(new AttributeValue().withS(compositeHashKey));
+                    geoHashKeyCondition = Condition.builder().comparisonOperator(ComparisonOperator.EQ)
+                            .attributeValueList(AttributeValue.builder().s(compositeHashKey).build()).build();
                 } else {
-                    geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                            .withAttributeValueList(new AttributeValue().withN(String.valueOf(geohashKey)));
+                    geoHashKeyCondition = Condition.builder().comparisonOperator(ComparisonOperator.EQ)
+                            .attributeValueList(AttributeValue.builder().n(String.valueOf(geohashKey)).build()).build();
                 }
                 keyConditions.put(config.getGeoHashKeyColumn(), geoHashKeyCondition);
 
                 //generate the geo hash range
-                AttributeValue minRange = new AttributeValue().withN(Long.toString(range.getRangeMin()));
-                AttributeValue maxRange = new AttributeValue().withN(Long.toString(range.getRangeMax()));
+                AttributeValue minRange = AttributeValue.builder().n(Long.toString(range.getRangeMin())).build();
+                AttributeValue maxRange = AttributeValue.builder().n(Long.toString(range.getRangeMax())).build();
 
-                Condition geoHashCondition = new Condition().withComparisonOperator(ComparisonOperator.BETWEEN)
-                        .withAttributeValueList(minRange, maxRange);
+                Condition geoHashCondition = Condition.builder().comparisonOperator(ComparisonOperator.BETWEEN)
+                        .attributeValueList(minRange, maxRange).build();
                 keyConditions.put(config.getGeoHashColumn(), geoHashCondition);
 
-                queryRequest.withKeyConditions(keyConditions)
-                        .withIndexName(config.getGeoIndexName());
-                queryRequests.add(queryRequest);
+                queryRequest.keyConditions(keyConditions)
+                        .indexName(config.getGeoIndexName());
+                queryRequests.add(queryRequest.build());
             }
         }
         return ImmutableList.copyOf(queryRequests);
@@ -89,20 +89,20 @@ public class GeoQueryHelper extends AbstractGeoQueryHelper {
      * @return a new
      */
     private QueryRequest copyQueryRequest(QueryRequest queryRequest) {
-        QueryRequest copiedQueryRequest = new QueryRequest().withAttributesToGet(queryRequest.getAttributesToGet())
-                .withConsistentRead(queryRequest.getConsistentRead())
-                .withExclusiveStartKey(queryRequest.getExclusiveStartKey())
-                .withIndexName(queryRequest.getIndexName())
-                .withKeyConditions(queryRequest.getKeyConditions())
-                .withLimit(queryRequest.getLimit())
-                .withReturnConsumedCapacity(queryRequest.getReturnConsumedCapacity())
-                .withScanIndexForward(queryRequest.getScanIndexForward())
-                .withSelect(queryRequest.getSelect())
-                .withAttributesToGet(queryRequest.getAttributesToGet())
-                .withTableName(queryRequest.getTableName())
-                .withFilterExpression(queryRequest.getFilterExpression())
-                .withExpressionAttributeNames(queryRequest.getExpressionAttributeNames())
-                .withExpressionAttributeValues(queryRequest.getExpressionAttributeValues());
+        QueryRequest copiedQueryRequest = QueryRequest.builder().attributesToGet(queryRequest.attributesToGet())
+                .consistentRead(queryRequest.consistentRead())
+                .exclusiveStartKey(queryRequest.exclusiveStartKey())
+                .indexName(queryRequest.indexName())
+                .keyConditions(queryRequest.keyConditions())
+                .limit(queryRequest.limit())
+                .returnConsumedCapacity(queryRequest.returnConsumedCapacity())
+                .scanIndexForward(queryRequest.scanIndexForward())
+                .select(queryRequest.select())
+                .attributesToGet(queryRequest.attributesToGet())
+                .tableName(queryRequest.tableName())
+                .filterExpression(queryRequest.filterExpression())
+                .expressionAttributeNames(queryRequest.expressionAttributeNames())
+                .expressionAttributeValues(queryRequest.expressionAttributeValues()).build();
 
         return copiedQueryRequest;
     }

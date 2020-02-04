@@ -4,7 +4,7 @@ import com.amazonaws.geo.model.*;
 import com.amazonaws.geo.model.filters.GeoFilters;
 import com.dashlabs.dash.geo.model.filters.GeoFilter;
 import com.dashlabs.dash.geo.s2.internal.S2Manager;
-import com.amazonaws.services.dynamodbv2.model.*;
+import software.amazon.awssdk.services.dynamodb.model.*;
 import com.google.common.base.Optional;
 import com.google.common.geometry.S2LatLng;
 import com.google.common.geometry.S2LatLngRect;
@@ -43,9 +43,12 @@ public class Geo {
      * @param configs        the collection of configurations to be used for decorating the request with geo attributes
      * @return the decorated request
      */
+//    public PutItemRequest putItemRequest(PutItemRequest putItemRequest, double latitude, double longitude, List<GeoConfig> configs) {
+//        updateAttributeValues(putItemRequest.item(), latitude, longitude, configs);
+//        return putItemRequest;
+//    }
     public PutItemRequest putItemRequest(PutItemRequest putItemRequest, double latitude, double longitude, List<GeoConfig> configs) {
-        updateAttributeValues(putItemRequest.getItem(), latitude, longitude, configs);
-        return putItemRequest;
+        return updateAttributeValues(putItemRequest, latitude, longitude, configs);
     }
 
     /**
@@ -56,8 +59,12 @@ public class Geo {
      * @param longitude         the longitude that needs to be attached with the item
      * @param configs           the collection of configurations to be used for decorating the request with geo attributes
      */
-    public void updateAttributeValues(Map<String, AttributeValue> attributeValueMap, double latitude, double longitude,
+    public PutItemRequest updateAttributeValues(PutItemRequest putItemRequest, double latitude, double longitude,
                                                    List<GeoConfig> configs) {
+
+    	Map<String, AttributeValue> attributeValueMap = new HashMap<String, AttributeValue>();
+    	attributeValueMap.putAll(putItemRequest.item());
+    	
         if (configs == null) {
             throw new IllegalArgumentException("Geo configs should not be null");
         }
@@ -70,7 +77,7 @@ public class Geo {
             long geoHashKey = s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength());
 
             //Decorate the request with the geohash
-            AttributeValue geoHashValue = new AttributeValue().withN(Long.toString(geohash));
+            AttributeValue geoHashValue = AttributeValue.builder().n(Long.toString(geohash)).build();
             attributeValueMap.put(config.getGeoHashColumn(), geoHashValue);
 
             AttributeValue geoHashKeyValue;
@@ -79,16 +86,18 @@ public class Geo {
                 if (compositeHashKeyValue == null) {
                     continue;
                 }
-                String compositeColumnValue = compositeHashKeyValue.getS();
+                String compositeColumnValue = compositeHashKeyValue.s();
                 String hashKey = config.getHashKeyDecorator().get().decorate(compositeColumnValue, geoHashKey);
                 //Decorate the request with the composite geoHashKey (type String)
-                geoHashKeyValue = new AttributeValue().withS(String.valueOf(hashKey));
+                geoHashKeyValue = AttributeValue.builder().s(String.valueOf(hashKey)).build();
             } else {
                 //Decorate the request with the geoHashKey (type Number)
-                geoHashKeyValue = new AttributeValue().withN(String.valueOf(geoHashKey));
+                geoHashKeyValue = AttributeValue.builder().n(String.valueOf(geoHashKey)).build();
             }
             attributeValueMap.put(config.getGeoHashKeyColumn(), geoHashKeyValue);
         }
+        
+        return putItemRequest.toBuilder().item(attributeValueMap).build();
     }
 
     /**
@@ -103,35 +112,36 @@ public class Geo {
      *                          For eg. Fetch an item where lat/long is 23.78787, -70.6767 AND category = 'restaurants'
      * @return the decorated request
      */
-    public QueryRequest getItemQuery(QueryRequest queryRequest, double latitude, double longitude, GeoConfig config,
+    public QueryRequest getItemQuery(QueryRequest queryRequestIn, double latitude, double longitude, GeoConfig config,
                                      Optional<String> compositeKeyValue) {
         checkConfigParams(config.getGeoIndexName(), config.getGeoHashKeyColumn(), config.getGeoHashColumn(), config.getGeoHashKeyLength());
 
         //Generate the geohash and geoHashKey to query by global secondary index
         long geohash = s2Manager.generateGeohash(latitude, longitude);
         long geoHashKey = s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength());
-        queryRequest.withIndexName(config.getGeoIndexName());
+        QueryRequest.Builder queryRequest = queryRequestIn.toBuilder();
+        queryRequest.indexName(config.getGeoIndexName());
         Map<String, Condition> keyConditions = new HashMap<String, Condition>();
 
         //Construct the hashKey condition
         Condition geoHashKeyCondition;
         if (config.getHashKeyDecorator().isPresent() && compositeKeyValue.isPresent()) {
             String hashKey = config.getHashKeyDecorator().get().decorate(compositeKeyValue.get(), geoHashKey);
-            geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                    .withAttributeValueList(new AttributeValue().withS(hashKey));
+            geoHashKeyCondition = Condition.builder().comparisonOperator(ComparisonOperator.EQ)
+                    .attributeValueList(AttributeValue.builder().s(hashKey).build()).build();
         } else {
-            geoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                    .withAttributeValueList(new AttributeValue().withN(String.valueOf(geoHashKey)));
+            geoHashKeyCondition = Condition.builder().comparisonOperator(ComparisonOperator.EQ)
+                    .attributeValueList(AttributeValue.builder().n(String.valueOf(geoHashKey)).build()).build();
         }
         keyConditions.put(config.getGeoHashKeyColumn(), geoHashKeyCondition);
 
         //Construct the geohash condition
-        Condition geoHashCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                .withAttributeValueList(new AttributeValue().withN(String.valueOf(geohash)));
+        Condition geoHashCondition = Condition.builder().comparisonOperator(ComparisonOperator.EQ)
+                .attributeValueList(AttributeValue.builder().n(String.valueOf(geohash)).build()).build();
         keyConditions.put(config.getGeoHashColumn(), geoHashCondition);
 
-        queryRequest.setKeyConditions(keyConditions);
-        return queryRequest;
+        queryRequest.keyConditions(keyConditions);
+        return queryRequest.build();
     }
 
     /**

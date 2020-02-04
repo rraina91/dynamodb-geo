@@ -1,7 +1,7 @@
 package com.amazonaws.geo.model;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import com.dashlabs.dash.geo.model.filters.GeoFilter;
 
 import java.util.List;

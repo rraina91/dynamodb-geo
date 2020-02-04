@@ -1,10 +1,10 @@
 package com.amazonaws.geo.s2.internal;
 
 import com.amazonaws.geo.model.GeoQueryRequest;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 import com.dashlabs.dash.geo.model.filters.GeoFilter;
 import com.google.common.collect.ImmutableList;
 
@@ -24,14 +24,14 @@ public class GeoQueryClient {
     /**
      * The db client to use when executing the queries
      */
-    private final AmazonDynamoDBClient dbClient;
+    private final DynamoDbClient dbClient;
 
     /**
      * The executor service to use to manage the queries workload
      */
     private final ExecutorService executorService;
 
-    public GeoQueryClient(AmazonDynamoDBClient dbClient, ExecutorService executorService) {
+    public GeoQueryClient(DynamoDbClient dbClient, ExecutorService executorService) {
         this.dbClient = dbClient;
         this.executorService = executorService;
     }
@@ -70,16 +70,16 @@ public class GeoQueryClient {
      * @return a collection of filtered result items
      */
     private List<Map<String, AttributeValue>> executeQuery(QueryRequest queryRequest, GeoFilter<Map<String, AttributeValue>> resultFilter) {
-        QueryResult queryResult;
+    	QueryResponse queryResult;
         List<Map<String, AttributeValue>> resultItems = new ArrayList<Map<String, AttributeValue>>();
         do {
             queryResult = dbClient.query(queryRequest);
-            List<Map<String, AttributeValue>> items = queryResult.getItems();
+            List<Map<String, AttributeValue>> items = queryResult.items();
             // filter the results using the geo filter
             List<Map<String, AttributeValue>> filteredItems = resultFilter.filter(items);
             resultItems.addAll(filteredItems);
-            queryRequest = queryRequest.withExclusiveStartKey(queryResult.getLastEvaluatedKey());
-        } while ((queryResult.getLastEvaluatedKey() != null));
+            queryRequest = queryRequest.toBuilder().exclusiveStartKey(queryResult.lastEvaluatedKey()).build();
+        } while ((!queryResult.lastEvaluatedKey().isEmpty()));
 
         return resultItems;
     }

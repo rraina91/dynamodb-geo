@@ -1,6 +1,6 @@
 package com.amazonaws.geo.model.filters;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import com.dashlabs.dash.geo.model.filters.GeoDataExtractor;
 import com.dashlabs.dash.geo.model.filters.GeoFilter;
 import com.dashlabs.dash.geo.model.filters.RadiusGeoFilter;
@@ -19,15 +19,15 @@ public class GeoFilters {
 
     private static final GeoDataExtractor<Map<String, AttributeValue>> EXTRACTOR = new GeoDataExtractor<Map<String, AttributeValue>>() {
         @Override public Optional<Double> extractLatitude(Map<String, AttributeValue> item) {
-            if ((item.get(GeoFilter.LATITUDE_FIELD) != null) && (item.get(GeoFilter.LATITUDE_FIELD).getN() != null)) {
-                return Optional.of(Double.valueOf(item.get(GeoFilter.LATITUDE_FIELD).getN()));
+            if ((item.get(GeoFilter.LATITUDE_FIELD) != null) && (item.get(GeoFilter.LATITUDE_FIELD).n() != null)) {
+                return Optional.of(Double.valueOf(item.get(GeoFilter.LATITUDE_FIELD).n()));
             }
             return Optional.empty();
         }
 
         @Override public Optional<Double> extractLongitude(Map<String, AttributeValue> item) {
-            if ((item.get(GeoFilter.LONGITUDE_FIELD) != null) && (item.get(GeoFilter.LONGITUDE_FIELD).getN() != null)) {
-                return Optional.of(Double.valueOf(item.get(GeoFilter.LONGITUDE_FIELD).getN()));
+            if ((item.get(GeoFilter.LONGITUDE_FIELD) != null) && (item.get(GeoFilter.LONGITUDE_FIELD).n() != null)) {
+                return Optional.of(Double.valueOf(item.get(GeoFilter.LONGITUDE_FIELD).n()));
             }
             return Optional.empty();
         }

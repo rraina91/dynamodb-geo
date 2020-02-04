@@ -1,20 +1,34 @@
 package com.amazonaws.geo;
 
-import com.amazonaws.geo.model.GeoQueryRequest;
-import com.amazonaws.services.dynamodbv2.model.*;
-import com.dashlabs.dash.geo.s2.internal.S2Manager;
-import com.google.common.base.Optional;
-import com.google.common.geometry.S2LatLng;
-import com.google.common.geometry.S2LatLngRect;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import org.junit.Test;
+
+import com.amazonaws.geo.model.GeoQueryRequest;
+import com.dashlabs.dash.geo.s2.internal.S2Manager;
+import com.google.common.base.Optional;
+import com.google.common.geometry.S2LatLng;
+import com.google.common.geometry.S2LatLngRect;
+
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 
 /**
  * Created by mpuri on 3/26/14
@@ -27,7 +41,7 @@ public class GeoTest {
         try {
             List<GeoConfig> configs = new ArrayList<GeoConfig>();
             configs.add(new GeoConfig(null, null, null, 0, Optional.<HashKeyDecorator>absent(), null));
-            geo.putItemRequest(new PutItemRequest(), 0.0, 0.0, configs);
+            geo.putItemRequest(PutItemRequest.builder().build(), 0.0, 0.0, configs);
             fail("Should have failed as there are invalid fields");
         } catch (IllegalArgumentException e) {
             //expected
@@ -48,17 +62,17 @@ public class GeoTest {
         configs.add(config);
         String tableName = "TableWithSomeData";
         Map<String, AttributeValue> populatedItem = new HashMap<String, AttributeValue>();
-        populatedItem.put("title", new AttributeValue().withS("Ippudo"));
-        PutItemRequest request = new PutItemRequest().withTableName(tableName).withItem(populatedItem);
+        populatedItem.put("title", AttributeValue.builder().s("Ippudo").build());
+        PutItemRequest request = PutItemRequest.builder().tableName(tableName).item(populatedItem).build();
         when(s2Manager.generateGeohash(lat, longitude)).thenReturn(geohash);
         when(s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength())).thenReturn(geohashKey);
 
         PutItemRequest withGeoProperties = geo.putItemRequest(request, lat, longitude, configs);
         assertNotNull(withGeoProperties);
-        assertEquals(request.getTableName(), withGeoProperties.getTableName());
-        assertEquals(request.getItem().get("title"), withGeoProperties.getItem().get("title"));
-        assertEquals(withGeoProperties.getItem().get(config.getGeoHashColumn()).getN(), String.valueOf(geohash));
-        assertEquals(withGeoProperties.getItem().get(config.getGeoHashKeyColumn()).getN(), String.valueOf(geohashKey));
+        assertEquals(request.tableName(), withGeoProperties.tableName());
+        assertEquals(request.item().get("title"), withGeoProperties.item().get("title"));
+        assertEquals(withGeoProperties.item().get(config.getGeoHashColumn()).n(), String.valueOf(geohash));
+        assertEquals(withGeoProperties.item().get(config.getGeoHashKeyColumn()).n(), String.valueOf(geohashKey));
         verify(s2Manager, times(1)).generateGeohash(lat, longitude);
         verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
         verifyNoMoreInteractions(s2Manager);
@@ -78,18 +92,18 @@ public class GeoTest {
         configs.add(config);
         String tableName = "TableWithSomeData";
         Map<String, AttributeValue> populatedItem = new HashMap<String, AttributeValue>();
-        populatedItem.put("title", new AttributeValue().withS("Ippudo"));
-        populatedItem.put("venueCategory", new AttributeValue().withS("restaurant"));
-        PutItemRequest request = new PutItemRequest().withTableName(tableName).withItem(populatedItem);
+        populatedItem.put("title", AttributeValue.builder().s("Ippudo").build());
+        populatedItem.put("venueCategory", AttributeValue.builder().s("restaurant").build());
+        PutItemRequest request = PutItemRequest.builder().tableName(tableName).item(populatedItem).build();
         when(s2Manager.generateGeohash(lat, longitude)).thenReturn(geohash);
         when(s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength())).thenReturn(geohashKey);
 
         PutItemRequest withGeoProperties = geo.putItemRequest(request, lat, longitude, configs);
         assertNotNull(withGeoProperties);
-        assertEquals(request.getTableName(), withGeoProperties.getTableName());
-        assertEquals(request.getItem().get("title"), withGeoProperties.getItem().get("title"));
-        assertEquals(withGeoProperties.getItem().get(config.getGeoHashColumn()).getN(), String.valueOf(geohash));
-        assertEquals(withGeoProperties.getItem().get(config.getGeoHashKeyColumn()).getS(), new DefaultHashKeyDecorator().decorate("restaurant", geohashKey));
+        assertEquals(request.tableName(), withGeoProperties.tableName());
+        assertEquals(request.item().get("title"), withGeoProperties.item().get("title"));
+        assertEquals(withGeoProperties.item().get(config.getGeoHashColumn()).n(), String.valueOf(geohash));
+        assertEquals(withGeoProperties.item().get(config.getGeoHashKeyColumn()).s(), new DefaultHashKeyDecorator().decorate("restaurant", geohashKey));
         verify(s2Manager, times(1)).generateGeohash(lat, longitude);
         verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
         verifyNoMoreInteractions(s2Manager);
@@ -98,17 +112,17 @@ public class GeoTest {
 
         // test where the composite value is null, the composite GSI should not be added to the put-item request
         populatedItem.clear();
-        populatedItem.put("title", new AttributeValue().withS("Ippudo"));
-        request = new PutItemRequest().withTableName(tableName).withItem(populatedItem);
+        populatedItem.put("title", AttributeValue.builder().s("Ippudo").build());
+        request = PutItemRequest.builder().tableName(tableName).item(populatedItem).build();
         when(s2Manager.generateGeohash(lat, longitude)).thenReturn(geohash);
         when(s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength())).thenReturn(geohashKey);
 
         withGeoProperties = geo.putItemRequest(request, lat, longitude, configs);
         assertNotNull(withGeoProperties);
-        assertEquals(request.getTableName(), withGeoProperties.getTableName());
-        assertEquals(request.getItem().get("title"), withGeoProperties.getItem().get("title"));
-        assertEquals(withGeoProperties.getItem().get(config.getGeoHashColumn()).getN(), String.valueOf(geohash));
-        assertNull(withGeoProperties.getItem().get(config.getGeoHashKeyColumn()));
+        assertEquals(request.tableName(), withGeoProperties.tableName());
+        assertEquals(request.item().get("title"), withGeoProperties.item().get("title"));
+        assertEquals(withGeoProperties.item().get(config.getGeoHashColumn()).n(), String.valueOf(geohash));
+        assertNull(withGeoProperties.item().get(config.getGeoHashKeyColumn()));
         verify(s2Manager, times(1)).generateGeohash(lat, longitude);
         verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
         verifyNoMoreInteractions(s2Manager);
@@ -119,7 +133,7 @@ public class GeoTest {
     public void getItemQueryInvalidFields() {
         Geo geo = new Geo();
         try {
-            geo.getItemQuery(new QueryRequest(), 0.0, 0.0, null, null, null, 0, Optional.<String>absent());
+            geo.getItemQuery(QueryRequest.builder().build(), 0.0, 0.0, null, null, null, 0, Optional.<String>absent());
             fail("Should have failed as there are invalid fields");
         } catch (IllegalArgumentException e) {
             //expected
@@ -135,22 +149,22 @@ public class GeoTest {
         double longitude = -5.5;
         long geohash = System.currentTimeMillis();
         long geohashKey = 12345;
-        Condition expectedGeoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                .withAttributeValueList(new AttributeValue().withN(String.valueOf(geohashKey)));
-        Condition expectedGeoHashCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                .withAttributeValueList(new AttributeValue().withN(String.valueOf(geohash)));
+        Condition expectedGeoHashKeyCondition = Condition.builder().comparisonOperator(ComparisonOperator.EQ)
+                .attributeValueList(AttributeValue.builder().n(String.valueOf(geohashKey)).build()).build();
+        Condition expectedGeoHashCondition = Condition.builder().comparisonOperator(ComparisonOperator.EQ)
+                .attributeValueList(AttributeValue.builder().n(String.valueOf(geohash)).build()).build();
 
         GeoConfig config = createTestConfig(false, null);
         String tableName = "TableWithSomeData";
-        QueryRequest query = new QueryRequest().withTableName(tableName);
+        QueryRequest query = QueryRequest.builder().tableName(tableName).build();
         when(s2Manager.generateGeohash(lat, longitude)).thenReturn(geohash);
         when(s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength())).thenReturn(geohashKey);
 
         QueryRequest withGeoProperties = geo.getItemQuery(query, lat, longitude, config, Optional.<String>absent());
         assertNotNull(withGeoProperties);
-        assertEquals(query.getTableName(), withGeoProperties.getTableName());
-        assertEquals(withGeoProperties.getKeyConditions().get(config.getGeoHashKeyColumn()), expectedGeoHashKeyCondition);
-        assertEquals(withGeoProperties.getKeyConditions().get(config.getGeoHashColumn()), expectedGeoHashCondition);
+        assertEquals(query.tableName(), withGeoProperties.tableName());
+        assertEquals(withGeoProperties.keyConditions().get(config.getGeoHashKeyColumn()), expectedGeoHashKeyCondition);
+        assertEquals(withGeoProperties.keyConditions().get(config.getGeoHashColumn()), expectedGeoHashCondition);
         verify(s2Manager, times(1)).generateGeohash(lat, longitude);
         verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
         verifyNoMoreInteractions(s2Manager);
@@ -166,22 +180,22 @@ public class GeoTest {
         long geohash = System.currentTimeMillis();
         long geohashKey = 12345;
         String category = "restaurant";
-        Condition expectedGeoHashKeyCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                .withAttributeValueList(new AttributeValue().withS(String.format("%s:%d", category, geohashKey)));
-        Condition expectedGeoHashCondition = new Condition().withComparisonOperator(ComparisonOperator.EQ)
-                .withAttributeValueList(new AttributeValue().withN(String.valueOf(geohash)));
+        Condition expectedGeoHashKeyCondition = Condition.builder().comparisonOperator(ComparisonOperator.EQ)
+                .attributeValueList(AttributeValue.builder().s(String.format("%s:%d", category, geohashKey)).build()).build();
+        Condition expectedGeoHashCondition = Condition.builder().comparisonOperator(ComparisonOperator.EQ)
+                .attributeValueList(AttributeValue.builder().n(String.valueOf(geohash)).build()).build();
 
         GeoConfig config = createTestConfig(true, "category");
         String tableName = "TableWithSomeData";
-        QueryRequest query = new QueryRequest().withTableName(tableName);
+        QueryRequest query = QueryRequest.builder().tableName(tableName).build();
         when(s2Manager.generateGeohash(lat, longitude)).thenReturn(geohash);
         when(s2Manager.generateHashKey(geohash, config.getGeoHashKeyLength())).thenReturn(geohashKey);
 
         QueryRequest withGeoProperties = geo.getItemQuery(query, lat, longitude, config, Optional.of(category));
         assertNotNull(withGeoProperties);
-        assertEquals(query.getTableName(), withGeoProperties.getTableName());
-        assertEquals(withGeoProperties.getKeyConditions().get(config.getGeoHashKeyColumn()), expectedGeoHashKeyCondition);
-        assertEquals(withGeoProperties.getKeyConditions().get(config.getGeoHashColumn()), expectedGeoHashCondition);
+        assertEquals(query.tableName(), withGeoProperties.tableName());
+        assertEquals(withGeoProperties.keyConditions().get(config.getGeoHashKeyColumn()), expectedGeoHashKeyCondition);
+        assertEquals(withGeoProperties.keyConditions().get(config.getGeoHashColumn()), expectedGeoHashCondition);
         verify(s2Manager, times(1)).generateGeohash(lat, longitude);
         verify(s2Manager, times(1)).generateHashKey(geohash, config.getGeoHashKeyLength());
         verifyNoMoreInteractions(s2Manager);
@@ -191,7 +205,7 @@ public class GeoTest {
     public void radiusQueryInvalidRadius() {
         Geo geo = new Geo();
         try {
-            geo.radiusQuery(new QueryRequest(), 0.0, 0.0, -5.0, null, null, null, 0, Optional.<String>absent());
+            geo.radiusQuery(QueryRequest.builder().build(), 0.0, 0.0, -5.0, null, null, null, 0, Optional.<String>absent());
             fail("Should have failed as there are invalid fields");
         } catch (IllegalArgumentException e) {
             //expected
@@ -209,9 +223,9 @@ public class GeoTest {
         String category = "restaurant";
         GeoConfig config = createTestConfig(true, "category");
         String tableName = "TableWithSomeData";
-        QueryRequest query = new QueryRequest().withTableName(tableName);
+        QueryRequest query = QueryRequest.builder().tableName(tableName).build();
         List<QueryRequest> geoQueries = new ArrayList<QueryRequest>();
-        geoQueries.add(new QueryRequest().withLimit(100));
+        geoQueries.add(QueryRequest.builder().limit(100).build());
         S2LatLngRect latLngRect = new S2LatLngRect(S2LatLng.fromDegrees(lat, longitude), S2LatLng.fromDegrees(lat + 10, longitude + 10));
         when(s2Manager.getBoundingBoxForRadiusQuery(lat, longitude, radius)).thenReturn(latLngRect);
         when(geoQueryHelper.generateGeoQueries(query, latLngRect, config, Optional.of(category))).thenReturn(geoQueries);
@@ -229,7 +243,7 @@ public class GeoTest {
     public void rectangleQueryInvalidFields() {
         Geo geo = new Geo();
         try {
-            geo.rectangleQuery(new QueryRequest(), 0.0, 0.0, 0.0, 0.0, null, null, null, 0, Optional.<String>absent());
+            geo.rectangleQuery(QueryRequest.builder().build(), 0.0, 0.0, 0.0, 0.0, null, null, null, 0, Optional.<String>absent());
             fail("Should have failed as there are invalid fields");
         } catch (IllegalArgumentException e) {
             //expected
@@ -247,9 +261,9 @@ public class GeoTest {
         double maxLongitude = -25.5;
         GeoConfig config = createTestConfig(false, null);
         String tableName = "TableWithSomeData";
-        QueryRequest query = new QueryRequest().withTableName(tableName);
+        QueryRequest query = QueryRequest.builder().tableName(tableName).build();
         List<QueryRequest> geoQueries = new ArrayList<QueryRequest>();
-        geoQueries.add(new QueryRequest().withLimit(100));
+        geoQueries.add(QueryRequest.builder().limit(100).build());
         S2LatLngRect latLngRect = new S2LatLngRect(S2LatLng.fromDegrees(minLat, minLongitude), S2LatLng.fromDegrees(maxLat, maxLongitude));
         when(s2Manager.getBoundingBoxForRectangleQuery(minLat, minLongitude, maxLat, maxLongitude)).thenReturn(latLngRect);
         when(geoQueryHelper.generateGeoQueries(query, latLngRect, config, Optional.<String>absent())).thenReturn(geoQueries);

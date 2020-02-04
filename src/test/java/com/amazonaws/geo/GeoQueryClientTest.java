@@ -1,24 +1,29 @@
 package com.amazonaws.geo;
 
-import com.amazonaws.geo.model.GeoQueryRequest;
-import com.amazonaws.geo.s2.internal.GeoQueryClient;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.dashlabs.dash.geo.model.filters.GeoFilter;
-import org.junit.Test;
-
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.junit.Test;
+
+import com.amazonaws.geo.model.GeoQueryRequest;
+import com.amazonaws.geo.s2.internal.GeoQueryClient;
+import com.dashlabs.dash.geo.model.filters.GeoFilter;
+
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 /**
  * Created by mpuri on 3/26/14
@@ -27,48 +32,48 @@ public class GeoQueryClientTest {
 
     @Test @SuppressWarnings("unchecked")
     public void execute() {
-        AmazonDynamoDBClient dbClient = mock(AmazonDynamoDBClient.class);
+        DynamoDbClient dbClient = mock(DynamoDbClient.class);
         GeoFilter<Map<String, AttributeValue>> geoFilter = mock(GeoFilter.class);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         GeoQueryClient geoQueryClient = new GeoQueryClient(dbClient,executorService);
 
         //Mock queries that get fired by the execute method
         List<QueryRequest> queryRequests = new ArrayList<QueryRequest>();
-        QueryRequest query1 = new QueryRequest().withLimit(5);
-        QueryRequest query2 = new QueryRequest().withLimit(10);
+        QueryRequest query1 = QueryRequest.builder().limit(5).build();
+        QueryRequest query2 = QueryRequest.builder().limit(10).build();
         queryRequests.add(query1);
         queryRequests.add(query2);
 
         //Mock results of the first query
-        QueryResult result1 = new QueryResult();
+        QueryResponse.Builder result1 = QueryResponse.builder();
         List<Map<String, AttributeValue>> resultItems1 = new ArrayList<Map<String, AttributeValue>>();
         Map<String, AttributeValue> item1 = new HashMap<String, AttributeValue>();
-        item1.put("title", new AttributeValue().withS("Milk Bar"));
-        item1.put("tag", new AttributeValue().withS("cafe:breakfast:american"));
+        item1.put("title", AttributeValue.builder().s("Milk Bar").build());
+        item1.put("tag", AttributeValue.builder().s("cafe:breakfast:american").build());
 
         Map<String, AttributeValue> item2 = new HashMap<String, AttributeValue>();
-        item2.put("title", new AttributeValue().withS("Chuko"));
-        item2.put("tag", new AttributeValue().withS("restaurant:noodles:japanese"));
+        item2.put("title", AttributeValue.builder().s("Chuko").build());
+        item2.put("tag", AttributeValue.builder().s("restaurant:noodles:japanese").build());
         resultItems1.add(item1);
         resultItems1.add(item2);
-        result1.setItems(resultItems1);
+        result1.items(resultItems1);
 
         //Mock results of the second query
-        QueryResult result2 = new QueryResult();
+        QueryResponse.Builder result2 = QueryResponse.builder();
         List<Map<String, AttributeValue>> resultItems2 = new ArrayList<Map<String, AttributeValue>>();
         Map<String, AttributeValue> item3 = new HashMap<String, AttributeValue>();
-        item3.put("title", new AttributeValue().withS("Al Di La"));
-        item3.put("tag", new AttributeValue().withS("restaurant:italian"));
+        item3.put("title", AttributeValue.builder().s("Al Di La").build());
+        item3.put("tag", AttributeValue.builder().s("restaurant:italian").build());
 
         Map<String, AttributeValue> item4 = new HashMap<String, AttributeValue>();
-        item4.put("title", new AttributeValue().withS("Blue Print"));
-        item4.put("tag", new AttributeValue().withS("bar:cocktails"));
+        item4.put("title", AttributeValue.builder().s("Blue Print").build());
+        item4.put("tag", AttributeValue.builder().s("bar:cocktails").build());
         resultItems2.add(item3);
         resultItems2.add(item4);
-        result2.setItems(resultItems2);
+        result2.items(resultItems2);
 
-        when(dbClient.query(query1)).thenReturn(result1);
-        when(dbClient.query(query2)).thenReturn(result2);
+        when(dbClient.query(query1)).thenReturn(result1.build());
+        when(dbClient.query(query2)).thenReturn(result2.build());
         when(geoFilter.filter(resultItems1)).thenReturn(resultItems1);
         List<Map<String, AttributeValue>> filteredList = new ArrayList<Map<String, AttributeValue>>();
         filteredList.add(resultItems2.get(0));
