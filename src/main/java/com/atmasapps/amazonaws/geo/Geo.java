@@ -1,20 +1,25 @@
 package com.atmasapps.amazonaws.geo;
 
-import com.atmasapps.amazonaws.geo.model.*;
-import com.atmasapps.amazonaws.geo.model.filters.GeoFilters;
-import com.atmasapps.dashlabs.dash.geo.model.filters.GeoFilter;
-import com.atmasapps.dashlabs.dash.geo.s2.internal.S2Manager;
-
-import software.amazon.awssdk.services.dynamodb.model.*;
-import com.google.common.base.Optional;
-import com.google.common.geometry.S2LatLng;
-import com.google.common.geometry.S2LatLngRect;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import com.atmasapps.amazonaws.geo.model.GeoQueryRequest;
+import com.atmasapps.amazonaws.geo.model.filters.GeoFilters;
+import com.atmasapps.dashlabs.dash.geo.model.filters.GeoFilter;
+import com.atmasapps.dashlabs.dash.geo.s2.internal.S2Manager;
+import com.google.common.base.Optional;
+import com.google.common.geometry.S2LatLng;
+import com.google.common.geometry.S2LatLngRect;
+
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 /**
  * Created by mpuri on 3/24/14
@@ -66,11 +71,32 @@ public class Geo {
     	Map<String, AttributeValue> attributeValueMap = new HashMap<String, AttributeValue>();
     	attributeValueMap.putAll(putItemRequest.item());
     	
-        updateAttributeValues(latitude, longitude, configs, attributeValueMap);
+        updateAttributeValues(latitude, longitude, configs, attributeValueMap, "");
         
         return putItemRequest.toBuilder().item(attributeValueMap).build();
     }
 
+    /**
+     * Decorates the given <code>updateItemRequest</code> with attributes required for geo spatial querying.
+     *
+     * @param attributeValueMap the items that needs to be decorated with geo attributes
+     * @param latitude          the latitude that needs to be attached with the item
+     * @param longitude         the longitude that needs to be attached with the item
+     * @param configs           the collection of configurations to be used for decorating the request with geo attributes
+     */
+    public UpdateItemRequest updateAttributeValues(UpdateItemRequest updateItemRequest, double latitude, double longitude,
+                                                   List<GeoConfig> configs) {
+
+    	Map<String, AttributeValue> attributeValueMap = new HashMap<String, AttributeValue>();
+    	attributeValueMap.putAll(updateItemRequest.expressionAttributeValues());
+
+    	// Use ":" prefix for the field for a direct Update request
+    	updateAttributeValues(latitude, longitude, configs, attributeValueMap, ":");
+        
+        return updateItemRequest.toBuilder().expressionAttributeValues(attributeValueMap).build();
+    }
+
+    
     /**
      * Update attribute values with this lat/long and GeohashConfig combination
      * This method allows you to easily provide Geo-enhanced attributes to either PutItem or UpdateItem request forms in the new AWS SDK
@@ -79,9 +105,10 @@ public class Geo {
      * @param longitude longitude
      * @param configs Geo config
      * @param attributeValueMap The value-map to provide to UpdateItemRequest
+     * @param fieldPrefix In the AttributeValue map provided, when inserting the key names, put a prefix in front. (i.e. a ":" is normally expected when creating a Map for using Update expressions)
      */
-	public void updateAttributeValues(double latitude, double longitude, List<GeoConfig> configs,
-			Map<String, AttributeValue> attributeValueMap) {
+	private void updateAttributeValues(double latitude, double longitude, List<GeoConfig> configs,
+			Map<String, AttributeValue> attributeValueMap, String fieldPrefix) {
 		if (configs == null) {
             throw new IllegalArgumentException("Geo configs should not be null");
         }
@@ -95,7 +122,7 @@ public class Geo {
 
             //Decorate the request with the geohash
             AttributeValue geoHashValue = AttributeValue.builder().n(Long.toString(geohash)).build();
-            attributeValueMap.put(config.getGeoHashColumn(), geoHashValue);
+            attributeValueMap.put(fieldPrefix + config.getGeoHashColumn(), geoHashValue);
 
             AttributeValue geoHashKeyValue;
             if (config.getHashKeyDecorator().isPresent() && config.getCompositeHashKeyColumn().isPresent()) {
@@ -111,7 +138,7 @@ public class Geo {
                 //Decorate the request with the geoHashKey (type Number)
                 geoHashKeyValue = AttributeValue.builder().n(String.valueOf(geoHashKey)).build();
             }
-            attributeValueMap.put(config.getGeoHashKeyColumn(), geoHashKeyValue);
+            attributeValueMap.put(fieldPrefix + config.getGeoHashKeyColumn(), geoHashKeyValue);
         }
 	}
 
